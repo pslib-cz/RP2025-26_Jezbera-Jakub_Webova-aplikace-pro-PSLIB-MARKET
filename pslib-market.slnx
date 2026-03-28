@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="pslib-market.client/pslib-market.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="pslib-market.Server/pslib-market.Server.csproj" />
+</Solution>

@@ -1,0 +1,6 @@
+@pslib_market.Server_HostAddress = http://localhost:5263
+
+GET {{pslib_market.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
