@@ -24,6 +24,8 @@ namespace pslib_market.Server.Models
         public Image? Image { get; set; }
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
 
+        public string? ReservedById { get; set; }
+
 
 
 

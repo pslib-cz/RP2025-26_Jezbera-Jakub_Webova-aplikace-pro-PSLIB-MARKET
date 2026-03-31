@@ -57,6 +57,9 @@ namespace pslib_market.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ReservedById")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SaleStatus")
                         .HasColumnType("INTEGER");
 
