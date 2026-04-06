@@ -13,6 +13,7 @@ namespace pslib_market.Server.Models
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastUpdatedAt { get; set;  } = DateTime.UtcNow;
 
         [Required]
         public string OwnerId { get; set; }

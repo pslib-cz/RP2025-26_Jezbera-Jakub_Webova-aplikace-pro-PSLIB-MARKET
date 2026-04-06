@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using pslib_market.Server.Data;
 using pslib_market.Server.Models;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
 
 namespace pslib_market.Server.Controller
 {
@@ -8,7 +11,6 @@ namespace pslib_market.Server.Controller
     [ApiController]
     public class ImagesController : ControllerBase
     {
-
         private readonly ApplicationDbContext _context;
 
         public ImagesController(ApplicationDbContext context)
@@ -24,18 +26,25 @@ namespace pslib_market.Server.Controller
                 return BadRequest("No file uploaded.");
             }
 
-            if (file.Length > 5 * 1024 * 1024) // 5MB limit
-            {
-                return BadRequest("File size exceeds the 5MB limit.");
-            }
 
             using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream);
 
-            var newImage = new Image
+            using (var image = await SixLabors.ImageSharp.Image.LoadAsync(file.OpenReadStream()))
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                // PŘIDÁNO: Otevírám blok s pravidly pro to 
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(1600, 1600)
+                }));
+
+                await image.SaveAsJpegAsync(memoryStream, new JpegEncoder { Quality = 80 });
+            }
+
+            var newImage = new pslib_market.Server.Models.Image
             {
                 OriginalName = file.FileName,
-                ContentType = file.ContentType,
+                ContentType = "image/jpeg",
                 Blob = memoryStream.ToArray(),
                 UploadedAt = DateTime.UtcNow
             };
@@ -44,8 +53,6 @@ namespace pslib_market.Server.Controller
             await _context.SaveChangesAsync();
 
             return Ok(new { imageId = newImage.Id });
-
-
         }
 
         [HttpGet("{id}")]
@@ -57,9 +64,6 @@ namespace pslib_market.Server.Controller
                 return NotFound();
             }
             return File(image.Blob, image.ContentType, image.OriginalName);
-
-
-
         }
     }
 }

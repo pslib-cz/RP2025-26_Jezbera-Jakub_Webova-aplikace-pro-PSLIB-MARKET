@@ -22,8 +22,16 @@ namespace pslib_market.Server.Controller
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
         {
+
+            var now = DateTime.UtcNow;
+            var oneMonthAgo = now.AddMonths(-1);
+            var twoYearsAgo = now.AddYears(-2);
+
             var books = await _context.Books
-                .Include(b => b.Tags)
+                .Where(b => !(b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt < oneMonthAgo))
+                .Where(b => !(b.SaleStatus == SaleStatus.Archived && b.LastUpdatedAt < twoYearsAgo))
+                .OrderBy(b => b.SaleStatus == SaleStatus.Archived ? 1 : 0 )
+                .ThenByDescending(b => b.CreatedAt)
                 .ToListAsync();
             return Ok(books);
 

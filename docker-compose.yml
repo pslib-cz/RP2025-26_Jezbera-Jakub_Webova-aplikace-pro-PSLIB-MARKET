@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: market_dev
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB: pslib_market_local
+    ports:
+      - "5432:5432"
+    restart: always
