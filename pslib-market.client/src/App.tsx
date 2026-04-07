@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-
-type Book = {
-  id: number;
-  title: string;
-  price: number;
-}
+import type { Book } from './types/models';
 
 function App() {
   const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    fetch('https://localhost:7049/api/books')
+    fetch('http://localhost:5263/api/books')
       .then(response => response.json())
       .then(data => setBooks(data))
       .catch(error => console.error("Chyba při stahování dat:", error));
