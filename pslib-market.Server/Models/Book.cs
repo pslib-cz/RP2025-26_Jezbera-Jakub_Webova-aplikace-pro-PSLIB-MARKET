@@ -19,11 +19,9 @@ namespace pslib_market.Server.Models
         public string OwnerId { get; set; }
         public SaleStatus SaleStatus { get; set; } = SaleStatus.Available;
 
-        public BookCondition Condition { get; set; } 
-
+        public ICollection<Tag> Tags { get; set; } = new List<Tag>();
         public int? ImageId { get; set; }
         public Image? Image { get; set; }
-        public ICollection<Tag> Tags { get; set; } = new List<Tag>();
 
         public string? ReservedById { get; set; }
 
