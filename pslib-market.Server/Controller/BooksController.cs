@@ -20,9 +20,8 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        public async Task<ActionResult<IEnumerable<BookDto>>> GetBooks()
         {
-
             var now = DateTime.UtcNow;
             var oneMonthAgo = now.AddMonths(-1);
             var twoYearsAgo = now.AddYears(-2);
@@ -31,11 +30,20 @@ namespace pslib_market.Server.Controller
                 .Include(b => b.Tags)
                 .Where(b => !(b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt < oneMonthAgo))
                 .Where(b => !(b.SaleStatus == SaleStatus.Archived && b.LastUpdatedAt < twoYearsAgo))
-                .OrderBy(b => b.SaleStatus == SaleStatus.Archived ? 1 : 0 )
+                .OrderBy(b => b.SaleStatus == SaleStatus.Archived ? 1 : 0)
                 .ThenByDescending(b => b.CreatedAt)
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Price = b.Price,
+                    OwnerId = b.OwnerId,
+                    SaleStatus = b.SaleStatus,
+                    Tags = b.Tags.Select(t => t.Name).ToList()
+                })
                 .ToListAsync();
-            return Ok(books);
 
+            return Ok(books);
         }
 
         [HttpPost]
@@ -82,7 +90,6 @@ namespace pslib_market.Server.Controller
                 return NotFound("Inzerát nebyl nalezen.");
             }
 
-            // Změníme pouze jeden jediný atribut
             book.SaleStatus = newStatus;
             await _context.SaveChangesAsync();
 
@@ -92,4 +99,4 @@ namespace pslib_market.Server.Controller
 
 
 
-    }
+}
