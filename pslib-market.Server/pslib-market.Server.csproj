@@ -7,7 +7,7 @@
     <RootNamespace>pslib_market.Server</RootNamespace>
     <SpaRoot>..\pslib-market.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:51572</SpaProxyServerUrl>
+    <SpaProxyServerUrl>http://localhost:51572</SpaProxyServerUrl>
     <UserSecretsId>50274632-e81d-49dd-899f-c602416eeaca</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
