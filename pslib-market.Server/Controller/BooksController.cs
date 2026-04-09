@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
 using pslib_market.Server.Models;
@@ -10,6 +11,7 @@ namespace pslib_market.Server.Controller
 
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BooksController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
