@@ -5,10 +5,10 @@ import App from './App.tsx';
 import './index.css';
 
 const oidcConfig = {
-    authority: 'https://oauth.pslib.cz',
-    client_id: 'market',
+    authority: import.meta.env.VITE_OIDC_AUTHORITY,
+    client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
     // client_secret: 'marketpslibcloudviaoauth', // dnes už ne, jde o public clienta, místo secret použijeme PKCE flow
-    redirect_uri: 'http://localhost:51572/callback',
+    redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI,
     scope: 'openid email pslib market',
     onSigninCallback: () => {
         window.history.replaceState({}, document.title, window.location.pathname);
