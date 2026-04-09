@@ -1,0 +1,52 @@
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .5rem 1rem;
+    font-weight: bold;
+    border-radius: .5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.btn:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.label {
+    line-height: 1;
+}
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+
+.icon svg {
+    width: 10px;
+    height: 10px;
+}
+
+.iconOnly {
+    width: 10px;
+    height: 10px;
+    padding: .5rem;
+}
+
+.primary {
+    background-color: var(--primary-blue);
+    color: var(--white);
+
+}
+
+
+.secondary {
+    border: 1px solid var(--primary-blue);
+    background-color: transparent;
+
+}

@@ -1,53 +1,34 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from 'react-oidc-context';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
-import type { Book } from './types/models';
+import HomePage from './pages/HomePage';
+import { useAuth } from 'react-oidc-context';
+import AuditLogPage from './pages/AuditLogPage';
+import MyOffersPage from './pages/MyOffersPage';
+import CreateOfferPage from './pages/CreateOfferPage';
+import Loader from './components/Loader';
+import Layout from './components/Layout';
+
+
 
 function App() {
-  const [books, setBooks] = useState<Book[]>([]);
   const auth = useAuth();
 
-  useEffect(() => {
-    fetch('http://localhost:5263/api/books')
-      .then(response => response.json())
-      .then(data => setBooks(data))
-      .catch(error => console.error("Chyba při stahování dat:", error));
-  }, []);
+  if (auth.isLoading) {
+    return  <Loader />;
+  }
 
   return (
-    <div className="app">
-      <header style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #ccc' }}>
-        <h1>PSLIB Market</h1>
-        
-        <div>
-          {auth.isLoading && <span>Ověřuji...</span>}
-          {auth.error && <div style={{ color: 'red', fontWeight: 'bold' }}>Chyba: {auth.error.message}</div>}
-          {auth.isAuthenticated && (
-            <div>
-              <span style={{ marginRight: '1rem' }}>Ahoj, {auth.user?.profile.email}</span>
-              <button onClick={() => auth.removeUser()}>Odhlásit</button>
-            </div>
-          )}
-          {!auth.isAuthenticated && !auth.isLoading && (
-            <button onClick={() => auth.signinRedirect()}>Přihlásit se školním účtem</button>
-          )}
-        </div>
-      </header>
-
-      <main>
-        <h2>Knihy v nabídce</h2>
-        {books.length === 0 ? (
-          <p>Načítám data z databáze...</p>
-        ) : (
-          <ul>
-            {books.map(book => (
-              <li key={book.id}>{book.title} - {book.price} Kč</li>
-            ))}
-          </ul>
-        )}
-      </main>
-    </div>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/*" element={<HomePage />} />
+        <Route path="/audit-log" element={<AuditLogPage />} />
+        <Route path="/moje-inzeraty" element={<MyOffersPage />} />
+        <Route path="/vytvorit-inzerat" element={<CreateOfferPage />} />
+      </Route>
+    </Routes>
   );
 }
+
+
 
 export default App;
