@@ -10,6 +10,7 @@ const oidcConfig = {
     client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
     // client_secret: 'marketpslibcloudviaoauth', // dnes už ne, jde o public clienta, místo secret použijeme PKCE flow
     redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI,
+    post_logout_redirect_uri: import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI ?? window.location.origin,
     scope: 'openid email pslib market',
     onSigninCallback: () => {
         window.history.replaceState({}, document.title, window.location.pathname);

@@ -4,7 +4,10 @@
     justify-content: center;
     gap: .5rem;
     padding: .5rem 1rem;
-    font-weight: bold;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
     border-radius: .5rem;
     border: 1px solid transparent;
     cursor: pointer;
@@ -28,14 +31,20 @@
 }
 
 .icon svg {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
 }
 
+
 .iconOnly {
-    width: 10px;
-    height: 10px;
-    padding: .5rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+}
+
+.iconOnly .icon svg {
+    width: 20px;
+    height: 20px;
 }
 
 .primary {
@@ -48,5 +57,6 @@
 .secondary {
     border: 1px solid var(--primary-blue);
     background-color: transparent;
+    color: var(--black);
 
 }
