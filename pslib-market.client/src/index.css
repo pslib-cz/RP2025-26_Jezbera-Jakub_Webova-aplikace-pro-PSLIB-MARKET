@@ -9,8 +9,11 @@
 
 html{
   font-family: "Open Sans", sans-serif;
+  font-size: 100%;
+  line-height: 1.5;
 }
 
 body {
-  font-family: inherit;
+  margin: 0;
+  background-color: var(--background);
 }
