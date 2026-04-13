@@ -7,7 +7,7 @@ const AuditLogPage = () => {
 
   return (
     <main>
-      <h1>Audit log</h1>
+      <h2>Audit log</h2>
     </main>
   )
 }

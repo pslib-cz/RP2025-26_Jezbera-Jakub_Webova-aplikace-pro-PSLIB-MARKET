@@ -7,7 +7,7 @@ const HomePage = () => {
 
   return (
     <main>
-      <h1>Nabídka knih</h1>
+      <h2>Nabídka knih</h2>
     </main>
   )
 }

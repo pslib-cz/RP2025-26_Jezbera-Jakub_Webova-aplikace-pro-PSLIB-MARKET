@@ -7,7 +7,7 @@ const MyOffersPage = () => {
 
   return (
     <main>
-      <h1>Moje inzeráty</h1>
+      <h2>Moje inzeráty</h2>
     </main>
   )
 }

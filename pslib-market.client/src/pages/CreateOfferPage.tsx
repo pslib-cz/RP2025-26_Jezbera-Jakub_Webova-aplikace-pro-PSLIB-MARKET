@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import AdForm from '../components/AdForm/AdForm'
+import styles from './CreateOfferPage.module.css'
 
 const CreateOfferPage = () => {
   useEffect(() => {
@@ -6,8 +8,11 @@ const CreateOfferPage = () => {
   }, [])
 
   return (
-    <main>
-      <h1>Vytvořit inzerát</h1>
+    <main className={styles.page}>
+      <section className={styles.card}>
+        <h2 className={styles.title}>Vytvořit inzerát</h2>
+        <AdForm />
+      </section>
     </main>
   )
 }

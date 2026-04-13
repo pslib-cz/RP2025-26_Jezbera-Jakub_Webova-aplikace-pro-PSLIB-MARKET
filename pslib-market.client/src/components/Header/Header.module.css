@@ -6,7 +6,6 @@
 }
 
 .headerShell {
-	width: 100%;
 	background-color: var(--white);
 }
 
@@ -14,7 +13,6 @@
 	display: grid;
 	grid-template-columns: 1fr auto;
 	align-items: center;
-	width: 100%;
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: .85rem 1rem;
@@ -96,6 +94,8 @@
 	text-decoration: none;
 	border-radius: .5rem;
 	border: 1px solid transparent;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .navLinkPrimary {
