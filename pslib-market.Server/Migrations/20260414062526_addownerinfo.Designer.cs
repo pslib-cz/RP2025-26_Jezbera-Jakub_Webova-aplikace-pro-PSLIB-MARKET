@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using pslib_market.Server.Data;
@@ -11,9 +12,11 @@ using pslib_market.Server.Data;
 namespace pslib_market.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414062526_addownerinfo")]
+    partial class addownerinfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,6 +92,9 @@ namespace pslib_market.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("ReservedById")
+                        .HasColumnType("text");
+
                     b.Property<int>("SaleStatus")
                         .HasColumnType("integer");
 
@@ -140,39 +146,6 @@ namespace pslib_market.Server.Migrations
                             SaleStatus = 2,
                             Title = "Elektrotechnika pro střední školy"
                         });
-                });
-
-            modelBuilder.Entity("pslib_market.Server.Models.BookReservation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BookId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ReservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReservedByUserEmail")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReservedByUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReservedByUserName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BookId");
-
-                    b.ToTable("BookReservation");
                 });
 
             modelBuilder.Entity("pslib_market.Server.Models.Image", b =>
@@ -290,20 +263,6 @@ namespace pslib_market.Server.Migrations
                         .HasForeignKey("ImageId");
 
                     b.Navigation("Image");
-                });
-
-            modelBuilder.Entity("pslib_market.Server.Models.BookReservation", b =>
-                {
-                    b.HasOne("pslib_market.Server.Models.Book", null)
-                        .WithMany("Reservations")
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("pslib_market.Server.Models.Book", b =>
-                {
-                    b.Navigation("Reservations");
                 });
 #pragma warning restore 612, 618
         }

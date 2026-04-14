@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
 using pslib_market.Server.Models;
 using pslib_market.Server.Models.Enums;
+using System.Security.Claims;
 
 
 namespace pslib_market.Server.Controller
@@ -22,6 +23,7 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetBooks()
         {
             var now = DateTime.UtcNow;
@@ -51,6 +53,28 @@ namespace pslib_market.Server.Controller
         [HttpPost]
         public async Task<ActionResult<Book>> CreateBook(Book book)
         {
+
+            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+             ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+
+            var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                            ?? User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                           ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+
+            if ( string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userName))
+            {
+                return Unauthorized("Neplatné uživatelské údaje.");
+            }
+            book.OwnerId = userId;
+            book.OwnerEmail = userEmail;
+            book.OwnerName = userName;
+            book.CreatedAt = DateTime.UtcNow;
+            book.LastUpdatedAt = DateTime.UtcNow;
+            book.SaleStatus = SaleStatus.Available;
+
+
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetBooks), new { id = book.Id }, book);

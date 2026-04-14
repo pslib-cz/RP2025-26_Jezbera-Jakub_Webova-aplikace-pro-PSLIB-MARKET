@@ -17,13 +17,17 @@ namespace pslib_market.Server.Models
 
         [Required]
         public string OwnerId { get; set; }
+
+        public string OwnerName { get; set; } = string.Empty;
+        public string OwnerEmail { get; set; } = string.Empty;
+
         public SaleStatus SaleStatus { get; set; } = SaleStatus.Available;
 
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
         public int? ImageId { get; set; }
         public Image? Image { get; set; }
 
-        public string? ReservedById { get; set; }
+        public ICollection<BookReservation> Reservations { get; set; } = new List<BookReservation>();
 
 
 

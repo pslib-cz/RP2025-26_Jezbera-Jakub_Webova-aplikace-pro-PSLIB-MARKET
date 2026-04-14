@@ -4,11 +4,13 @@ using pslib_market.Server.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using Microsoft.AspNetCore.Authorization;
 
 namespace pslib_market.Server.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -32,7 +34,6 @@ namespace pslib_market.Server.Controller
             using (var image = await SixLabors.ImageSharp.Image.LoadAsync(file.OpenReadStream()))
             {
                 image.Mutate(x => x.Resize(new ResizeOptions
-                // PŘIDÁNO: Otevírám blok s pravidly pro to 
                 {
                     Mode = ResizeMode.Max,
                     Size = new Size(1600, 1600)
@@ -56,6 +57,7 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult> GetImage(int id)
         {
             var image = await _context.Images.FindAsync(id);
