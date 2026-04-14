@@ -5,12 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { API_BASE_URL, getTags, type Tag } from "../../services/apiService";
 import styles from "./AdForm.module.css";
 import { useAuth } from "react-oidc-context";
+import { useNavigate } from "react-router-dom";
 
 const CONDITIONS = [
-  { value: "VeryGood", label: "Velmi dobrý" },
-  { value: "Good", label: "Dobrý" },
-  { value: "Scribbled", label: "Popsaný" },
-  { value: "Damaged", label: "Poškozený" },
+  { value: 0, label: "Velmi dobrý" },
+  { value: 1, label: "Dobrý" },
+  { value: 2, label: "Popsaný" },
+  { value: 3, label: "Poškozený" },
 ] as const;
 
 const adSchema = z.object({
@@ -37,6 +38,7 @@ const AdForm = () => {
   const [fileName, setFileName] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
   const auth = useAuth(); 
+  const navigate = useNavigate();
 
 
   const {
@@ -79,7 +81,7 @@ const AdForm = () => {
       formData.append("title", data.title);
       formData.append("subject", data.subject);
       formData.append("condition", data.condition);
-      formData.append("photo", data.photo[0]);
+      formData.append("Photo", data.photo[0]);
       formData.append("price", data.price.toString());
       formData.append("description", data.description || "");
 
@@ -94,6 +96,9 @@ const AdForm = () => {
       if (!response.ok) return alert("Chyba při odesílání inzerátu");
 
       console.log("Inzerát úspěšně odeslán");
+      navigate("/", {
+        state: { flashMessage: "Inzerát bude brzy schválen." },
+      });
     } catch (error) {
       console.error("Chyba při odesílání inzerátu", error);
       alert("Chyba při odesílání inzerátu");
