@@ -1,8 +1,14 @@
-import React from 'react'
+import { useEffect } from 'react'
 
 const HomePage = () => {
+  useEffect(() => {
+    document.title = 'Nabídka knih | PSLIB Market'
+  }, [])
+
   return (
-    <div>HomePage</div>
+    <main>
+      <h2>Nabídka knih</h2>
+    </main>
   )
 }
 

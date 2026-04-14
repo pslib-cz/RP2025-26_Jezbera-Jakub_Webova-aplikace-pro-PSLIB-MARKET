@@ -1,8 +1,14 @@
-import React from 'react'
+import { useEffect } from 'react'
 
 const AuditLogPage = () => {
+  useEffect(() => {
+    document.title = 'Audit log | PSLIB Market'
+  }, [])
+
   return (
-    <div>AuditLogPage</div>
+    <main>
+      <h2>Audit log</h2>
+    </main>
   )
 }
 
