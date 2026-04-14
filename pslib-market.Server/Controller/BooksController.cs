@@ -43,11 +43,14 @@ namespace pslib_market.Server.Controller
                 {
                     Id = b.Id,
                     Title = b.Title,
+                    Description = b.Description,
                     Price = b.Price,
                     OwnerId = b.OwnerId,
                     SaleStatus = b.SaleStatus,
                     Tags = b.Tags.Select(t => t.Name).ToList(),
-                    ImageId = b.ImageId
+                    ImageId = b.ImageId,
+                    OwnerName = b.OwnerName,
+                    OwnerEmail = b.OwnerEmail
                 })
                 .ToListAsync();
 
