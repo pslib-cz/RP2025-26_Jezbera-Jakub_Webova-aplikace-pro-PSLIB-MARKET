@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getTags, type Tag } from "../../services/apiService";
+import { API_BASE_URL, getTags, type Tag } from "../../services/apiService";
 import styles from "./AdForm.module.css";
+import { useAuth } from "react-oidc-context";
 
 const CONDITIONS = [
   { value: "VeryGood", label: "Velmi dobrý" },
@@ -35,6 +36,8 @@ type AdFormValues = z.output<typeof adSchema>;
 const AdForm = () => {
   const [fileName, setFileName] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
+  const auth = useAuth(); 
+
 
   const {
     register,
@@ -66,8 +69,35 @@ const AdForm = () => {
     }
   };
 
-  const onSubmit = (data: AdFormValues) => {
-    console.log(data);
+  const onSubmit = async (data: AdFormValues) => {
+    try {
+      console.log(data);
+      const token = auth.user?.access_token;
+      if (!token) return alert("Nejste přihlášený");
+
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("subject", data.subject);
+      formData.append("condition", data.condition);
+      formData.append("photo", data.photo[0]);
+      formData.append("price", data.price.toString());
+      formData.append("description", data.description || "");
+
+      const response = await fetch(`${API_BASE_URL}/books`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) return alert("Chyba při odesílání inzerátu");
+
+      console.log("Inzerát úspěšně odeslán");
+    } catch (error) {
+      console.error("Chyba při odesílání inzerátu", error);
+      alert("Chyba při odesílání inzerátu");
+    }
   };
 
   return (
@@ -84,7 +114,7 @@ const AdForm = () => {
           className={styles.input}
         />
         {errors.title &&
-        <p className={styles.error}>{errors.title.message}</p>}
+          <p className={styles.error}>{errors.title.message}</p>}
       </div>
 
       <div className={`${styles.field} ${styles.subjectField}`}>
