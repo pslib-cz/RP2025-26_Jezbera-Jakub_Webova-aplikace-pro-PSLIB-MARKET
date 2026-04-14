@@ -10,5 +10,6 @@ namespace pslib_market.Server.Models
             public List<string> Tags { get; set; }
         public string OwnerId { get; set; }
          public SaleStatus SaleStatus { get; set; }
+        public int? ImageId { get; set; }
     }
 }

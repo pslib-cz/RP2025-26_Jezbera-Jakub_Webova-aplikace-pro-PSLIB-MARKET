@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
 using pslib_market.Server.Models;
 using pslib_market.Server.Models.Enums;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 using System.Security.Claims;
 
 
@@ -43,7 +46,8 @@ namespace pslib_market.Server.Controller
                     Price = b.Price,
                     OwnerId = b.OwnerId,
                     SaleStatus = b.SaleStatus,
-                    Tags = b.Tags.Select(t => t.Name).ToList()
+                    Tags = b.Tags.Select(t => t.Name).ToList(),
+                    ImageId = b.ImageId
                 })
                 .ToListAsync();
 
@@ -51,7 +55,7 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpPost]
-        public async Task<ActionResult<Book>> CreateBook(Book book)
+        public async Task<ActionResult<Book>> CreateBook([FromForm] CreateBookDTO dto)
         {
 
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
@@ -63,17 +67,61 @@ namespace pslib_market.Server.Controller
             var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
                            ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
 
+            if (string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(userEmail))
+            {
+                userName = userEmail.Split('@')[0];
+            }
+
             if ( string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userName))
             {
                 return Unauthorized("Neplatné uživatelské údaje.");
             }
-            book.OwnerId = userId;
-            book.OwnerEmail = userEmail;
-            book.OwnerName = userName;
-            book.CreatedAt = DateTime.UtcNow;
-            book.LastUpdatedAt = DateTime.UtcNow;
-            book.SaleStatus = SaleStatus.Available;
 
+            byte[] imageBytes = null;
+            if (dto.Photo != null && dto.Photo.Length > 0)
+            {
+                using var ms = new MemoryStream();
+                using ( var image = await SixLabors.ImageSharp.Image.LoadAsync(dto.Photo.OpenReadStream()))
+                {
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(800, 800)
+                    }));
+                    await image.SaveAsJpegAsync(ms, new JpegEncoder { Quality = 75 });
+                }
+            }
+
+
+            var book = new Book
+            {
+                Title = dto.Title,
+                Price = dto.Price,
+                Description = dto.Description,
+
+                OwnerId = userId,
+                OwnerEmail = userEmail,
+                OwnerName = userName,
+                CreatedAt = DateTime.UtcNow,
+                LastUpdatedAt = DateTime.UtcNow,
+                SaleStatus = SaleStatus.Available,
+
+                Image = imageBytes != null ? new Models.Image
+                {
+                    OriginalName = dto.Photo.FileName,
+                    ContentType = "image/jpeg",
+                    Blob = imageBytes,
+                    UploadedAt = DateTime.UtcNow
+                } : null
+            };
+            if (!string.IsNullOrEmpty(dto.Subject))
+            {
+                var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == dto.Subject);
+                if (tag != null)
+                {
+                    book.Tags.Add(tag);
+                }
+            }
 
             _context.Books.Add(book);
             await _context.SaveChangesAsync();

@@ -34,7 +34,7 @@ namespace pslib_market.Server.Migrations
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("BookTag");
+                    b.ToTable("BookTag", (string)null);
 
                     b.HasData(
                         new
@@ -101,7 +101,7 @@ namespace pslib_market.Server.Migrations
 
                     b.HasIndex("ImageId");
 
-                    b.ToTable("Books");
+                    b.ToTable("Books", (string)null);
 
                     b.HasData(
                         new
@@ -172,7 +172,7 @@ namespace pslib_market.Server.Migrations
 
                     b.HasIndex("BookId");
 
-                    b.ToTable("BookReservation");
+                    b.ToTable("BookReservation", (string)null);
                 });
 
             modelBuilder.Entity("pslib_market.Server.Models.Image", b =>
@@ -200,7 +200,7 @@ namespace pslib_market.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Images");
+                    b.ToTable("Images", (string)null);
                 });
 
             modelBuilder.Entity("pslib_market.Server.Models.Tag", b =>
@@ -218,7 +218,7 @@ namespace pslib_market.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tags");
+                    b.ToTable("Tags", (string)null);
 
                     b.HasData(
                         new

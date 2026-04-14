@@ -20,41 +20,7 @@ namespace pslib_market.Server.Controller
             _context = context;
         }
 
-        [HttpPost]
-        public async Task<ActionResult> UploadImage(IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("No file uploaded.");
-            }
-
-
-            using var memoryStream = new MemoryStream();
-
-            using (var image = await SixLabors.ImageSharp.Image.LoadAsync(file.OpenReadStream()))
-            {
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Mode = ResizeMode.Max,
-                    Size = new Size(1600, 1600)
-                }));
-
-                await image.SaveAsJpegAsync(memoryStream, new JpegEncoder { Quality = 80 });
-            }
-
-            var newImage = new pslib_market.Server.Models.Image
-            {
-                OriginalName = file.FileName,
-                ContentType = "image/jpeg",
-                Blob = memoryStream.ToArray(),
-                UploadedAt = DateTime.UtcNow
-            };
-
-            _context.Images.Add(newImage);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { imageId = newImage.Id });
-        }
+       
 
         [HttpGet("{id}")]
         [AllowAnonymous]
