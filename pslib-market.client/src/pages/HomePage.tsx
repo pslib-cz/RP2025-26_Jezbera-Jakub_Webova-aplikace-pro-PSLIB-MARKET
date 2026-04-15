@@ -3,10 +3,12 @@ import { getBooks } from '../services/apiService'
 import BookCard from '../components/BookCard/BookCard'
 import type { Book } from '../types/models'
 import { useLocation, useNavigate } from 'react-router-dom'
+import FlashMessage, { type FlashMessageType } from '../components/FlashMessage'
 import styles from './HomePage.module.css'
 
 type FlashMessageState = {
   flashMessage?: string
+  flashType?: FlashMessageType
 }
 
 const HomePage = () => {
@@ -14,9 +16,13 @@ const HomePage = () => {
   const [books, setBooks] = useState<Book[]>([])
   const location = useLocation()
   const navigate = useNavigate()
-  const [flashMessage] = useState<string | null>(() => {
+  const [flashMessage, setFlashMessage] = useState<string | null>(() => {
     const state = location.state as FlashMessageState | null
     return state?.flashMessage ?? null
+  })
+  const [flashType] = useState<FlashMessageType>(() => {
+    const state = location.state as FlashMessageState | null
+    return state?.flashType ?? 'success'
   })
 
   useEffect(() => {
@@ -39,7 +45,13 @@ const HomePage = () => {
   return (
     <main>
       <h2>Nabídka knih</h2>
-      {flashMessage && <p className={styles.flashMessage}>{flashMessage}</p>}
+      {flashMessage && (
+        <FlashMessage
+          message={flashMessage}
+          type={flashType}
+          onClose={() => setFlashMessage(null)}
+        />
+      )}
       <div className={styles.bookGrid}>
         {books.map((book) => (
           <BookCard

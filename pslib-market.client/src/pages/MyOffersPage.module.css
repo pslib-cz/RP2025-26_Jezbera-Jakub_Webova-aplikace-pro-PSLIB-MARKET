@@ -1,0 +1,195 @@
+.page {
+	font-size: 16px;
+	width: min(1200px, 95vw);
+	margin: 0 auto;
+}
+
+.list {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2rem;
+	align-items: start;
+}
+
+.card {
+	padding: 16px;
+	border: 1px solid #d5dbe3;
+	border-radius: 16px;
+	background: #ffffff;
+	align-self: start;
+}
+
+.select {
+	min-width: 132px;
+	height: 34px;
+	border-radius: 8px;
+	border: 1px solid #c1cbd8;
+	padding: 0 0.5rem;
+	font-size: 16px;
+}
+
+.title {
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0;
+}
+
+.headerRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+	margin-bottom: 1rem;
+	min-width: 0;
+}
+
+.titleRow {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+	min-width: 0;
+}
+
+.thumbnail {
+	width: 56px;
+	height: 56px;
+	border-radius: 8px;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
+.metaGrid {
+	display: grid;
+	gap: 16px;
+}
+
+.metaRow {
+	display: grid;
+	grid-template-columns: minmax(90px, 140px) 1fr;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.metaLabel {
+	font-weight: 600;
+}
+
+.statusControl {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.reservationDropdown {
+	border-top: 1px solid #e2e8f0;
+	padding-top: 8px;
+}
+
+.reservationSummary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	cursor: pointer;
+	list-style: none;
+}
+
+.reservationSummary::-webkit-details-marker {
+	display: none;
+}
+
+.dropdownIconWrap {
+	position: relative;
+	width: 18px;
+	height: 18px;
+}
+
+.dropdownIconClosed,
+.dropdownIconOpen {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.dropdownIconClosed {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+.dropdownIconOpen {
+	opacity: 0;
+	transform: translateY(2px) scale(0.9);
+}
+
+.reservationDropdown[open] .dropdownIconClosed {
+	opacity: 0;
+	transform: translateY(-2px) scale(0.9);
+}
+
+.reservationDropdown[open] .dropdownIconOpen {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+.reservationList {
+	margin: 0;
+	padding-left: 20px;
+	display: grid;
+	gap: 4px;
+	max-height: 0;
+	opacity: 0;
+	overflow-y: hidden;
+	transition: max-height 0.24s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+
+.reservationDropdown[open] .reservationList {
+	max-height: 220px;
+	opacity: 1;
+	margin-top: 8px;
+	overflow-y: auto;
+}
+
+.editIconButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border: none;
+	background: transparent;
+	padding: 4px;
+	cursor: pointer;
+}
+
+.editIconButton svg {
+	width: 24px;
+	height: 24px;
+	display: block;
+}
+
+@media (min-width: 780px) {
+	.list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1.5rem;
+	}
+
+	.metaRow {
+		grid-template-columns: minmax(130px, 220px) 1fr;
+		gap: 10px;
+	}
+}
+
+@media (min-width: 1460px) {
+	.list {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.price{
+    color: #22C55E;
+    font-weight: 700;
+}

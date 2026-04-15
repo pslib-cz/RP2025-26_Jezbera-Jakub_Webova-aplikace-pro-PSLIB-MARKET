@@ -11,6 +11,10 @@
 	gap: 0.4rem;
 }
 
+.flashWrap {
+	grid-column: 1 / -1;
+}
+
 .nameField {
 	grid-column: 1 / -1;
 }

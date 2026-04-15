@@ -6,6 +6,7 @@ import { API_BASE_URL, getTags, type Tag } from "../../services/apiService";
 import styles from "./AdForm.module.css";
 import { useAuth } from "react-oidc-context";
 import { useNavigate } from "react-router-dom";
+import FlashMessage, { type FlashMessageType } from "../FlashMessage";
 
 const CONDITIONS = [
   { value: 0, label: "Velmi dobrý" },
@@ -18,9 +19,7 @@ const adSchema = z.object({
   title: z.string().trim().min(1, "Jméno knihy je povinné"),
   subject: z.string().trim().min(1, "Předmět je povinný"),
   condition: z.string().trim().min(1, "Vyber stav"),
-  photo: z
-    .instanceof(FileList)
-    .refine((files) => files.length > 0, "Foto učebnice je povinné"),
+  photo: z.any().optional(),
   price: z
     .string()
     .trim()
@@ -34,20 +33,46 @@ const adSchema = z.object({
 type AdFormInput = z.input<typeof adSchema>;
 type AdFormValues = z.output<typeof adSchema>;
 
-const AdForm = () => {
+type EditBookData = {
+  id: number;
+  title?: string;
+  tags?: string[];
+  condition?: number | string;
+  price?: number | string;
+  description?: string;
+};
+
+interface AdFormProps {
+  initialData?: EditBookData;
+}
+
+const AdForm = ({ initialData }: AdFormProps) => {
+  const isEditMode = !!initialData;
   const [fileName, setFileName] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
-  const auth = useAuth(); 
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
+  const [flashType, setFlashType] = useState<FlashMessageType>("error");
+  const auth = useAuth();
   const navigate = useNavigate();
-
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<AdFormInput, unknown, AdFormValues>({
     resolver: zodResolver(adSchema),
+    defaultValues: initialData
+      ? {
+          title: initialData.title,
+          subject: initialData.tags?.[0] || "",
+          condition: initialData.condition?.toString() || "",
+          price: initialData.price?.toString() || "",
+          description: initialData.description || "",
+        }
+      : {},
   });
+
   const photoRegister = register("photo");
 
   useEffect(() => {
@@ -59,7 +84,6 @@ const AdForm = () => {
         setTags([]);
       }
     };
-
     loadTags();
   }, []);
 
@@ -72,41 +96,79 @@ const AdForm = () => {
   };
 
   const onSubmit = async (data: AdFormValues) => {
+    if (!isEditMode && (!data.photo || data.photo.length === 0)) {
+      setError("photo", {
+        type: "manual",
+        message: "Foto učebnice je povinné",
+      });
+      return;
+    }
+
     try {
-      console.log(data);
       const token = auth.user?.access_token;
-      if (!token) return alert("Nejste přihlášený");
+      if (!token) {
+        setFlashType("error");
+        setFlashMessage("Nejste přihlášený.");
+        return;
+      }
 
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("subject", data.subject);
       formData.append("condition", data.condition);
-      formData.append("Photo", data.photo[0]);
       formData.append("price", data.price.toString());
       formData.append("description", data.description || "");
 
-      const response = await fetch(`${API_BASE_URL}/books`, {
-        method: "POST",
+      if (data.photo && data.photo.length > 0) {
+        formData.append("Photo", data.photo[0]);
+      }
+
+      const url = isEditMode
+        ? `${API_BASE_URL}/books/${initialData.id}`
+        : `${API_BASE_URL}/books`;
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
 
-      if (!response.ok) return alert("Chyba při odesílání inzerátu");
+      if (!response.ok) {
+        setFlashType("error");
+        setFlashMessage("Chyba při ukládání inzerátu.");
+        return;
+      }
 
-      console.log("Inzerát úspěšně odeslán");
-      navigate("/", {
-        state: { flashMessage: "Inzerát bude brzy schválen." },
+      navigate(isEditMode ? "/moje-inzeraty" : "/", {
+        state: {
+          flashType: "success",
+          flashMessage: isEditMode
+            ? "Inzerát byl úspěšně upraven."
+            : "Inzerát bude brzy schválen.",
+        },
       });
     } catch (error) {
       console.error("Chyba při odesílání inzerátu", error);
-      alert("Chyba při odesílání inzerátu");
+      setFlashType("error");
+      setFlashMessage("Chyba při odesílání inzerátu.");
     }
   };
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+      {flashMessage && (
+        <div className={styles.flashWrap}>
+          <FlashMessage
+            message={flashMessage}
+            type={flashType}
+            onClose={() => setFlashMessage(null)}
+          />
+        </div>
+      )}
+
       <div className={`${styles.field} ${styles.nameField}`}>
         <label className={styles.label} htmlFor="title">
           Jméno knihy
@@ -118,8 +180,7 @@ const AdForm = () => {
           {...register("title")}
           className={styles.input}
         />
-        {errors.title &&
-          <p className={styles.error}>{errors.title.message}</p>}
+        {errors.title && <p className={styles.error}>{errors.title.message}</p>}
       </div>
 
       <div className={`${styles.field} ${styles.subjectField}`}>
@@ -176,7 +237,7 @@ const AdForm = () => {
         <div className={`${styles.field} ${styles.photoField}`}>
           <label className={styles.label} htmlFor="photo">
             Foto učebnice
-            <span className={styles.required}>*</span>
+            {!isEditMode && <span className={styles.required}>*</span>}
           </label>
           <input
             id="photo"
@@ -190,7 +251,10 @@ const AdForm = () => {
             className={styles.fileInput}
           />
           <label htmlFor="photo" className={styles.fileLabel}>
-            <span>{fileName || "Nahrát obrázek"}</span>
+            <span>
+              {fileName ||
+                (isEditMode ? "Nechat původní obrázek" : "Nahrát obrázek")}
+            </span>
             <svg
               width="17"
               height="15"
@@ -208,7 +272,11 @@ const AdForm = () => {
             </svg>
           </label>
           {errors.photo && (
-            <p className={styles.error}>{errors.photo.message}</p>
+            <p className={styles.error}>
+              {typeof errors.photo.message === "string"
+                ? errors.photo.message
+                : "Foto učebnice je povinné"}
+            </p>
           )}
         </div>
 
@@ -251,7 +319,7 @@ const AdForm = () => {
 
       <div className={styles.submitButtonWrap}>
         <button className={styles.publishButton} type="submit">
-          Publikovat
+          {isEditMode ? "Uložit změny" : "Publikovat inzerát"}
         </button>
       </div>
     </form>

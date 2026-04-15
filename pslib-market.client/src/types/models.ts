@@ -8,11 +8,18 @@ export interface Book {
   title: string;
   description?: string;
   price: number;
-  imageId: number | null;
   ownerId: string;
   ownerName: string;
   ownerEmail: string;
   condition: number | string;
   saleStatus: number;
   tags: string[];
+  reservations?: BookReservation[];
+}
+
+export interface BookReservation {
+  id?: number;
+  reservedByUserName?: string;
+  reservedByUserEmail?: string;
+  reservedAt?: string;
 }

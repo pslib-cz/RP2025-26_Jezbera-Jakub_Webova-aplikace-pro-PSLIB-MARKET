@@ -1,0 +1,24 @@
+.block {
+    max-width: 480px;
+  margin: 0 auto;
+  padding: 1.25rem;
+  border: 1px solid #d5dbe3;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.container{
+    padding: 1.5rem;
+}
+
+.title {
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.text {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+
