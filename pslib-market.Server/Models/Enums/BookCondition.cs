@@ -5,8 +5,7 @@
         VeryGood = 0,
         Good = 1,
         Scribbled = 2,
-        Damaged = 3,
-        Other = 4
+        Damaged = 3
 
 
 
