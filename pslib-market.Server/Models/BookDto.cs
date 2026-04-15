@@ -13,6 +13,7 @@ namespace pslib_market.Server.Models
         public string OwnerName { get; set; }
         public string OwnerEmail { get; set; }
         public SaleStatus SaleStatus { get; set; }
+        public BookCondition Condition { get; set; }
         public int? ImageId { get; set; }
     }
 }

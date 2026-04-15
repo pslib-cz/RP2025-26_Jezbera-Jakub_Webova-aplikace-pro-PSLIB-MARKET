@@ -22,10 +22,14 @@ namespace pslib_market.Server.Models
         public string OwnerEmail { get; set; } = string.Empty;
 
         public SaleStatus SaleStatus { get; set; } = SaleStatus.Available;
+        public BookCondition Condition { get; set; } = BookCondition.VeryGood;
 
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
-        public int? ImageId { get; set; }
-        public Image? Image { get; set; }
+
+        [Required]
+        public byte[] ImageBlob { get; set; }
+        [Required]
+        public string ImageContentType { get; set; }
 
         public ICollection<BookReservation> Reservations { get; set; } = new List<BookReservation>();
 
