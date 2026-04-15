@@ -1,0 +1,29 @@
+.flashMessage {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #c3e6cb;
+  text-align: center;
+  font-weight: bold;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  row-gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start;
+  padding: 16px;
+}
+
+@media (min-width: 920px) {
+  .bookGrid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 378px));
+    justify-content: center;
+    gap: 32px;
+  }
+}
