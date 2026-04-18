@@ -14,6 +14,7 @@ namespace pslib_market.Server.Data
         public DbSet<Book> Books { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<BookReservation> BookReservations { get; set; }
+        public DbSet<BookActivityLog> BookActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

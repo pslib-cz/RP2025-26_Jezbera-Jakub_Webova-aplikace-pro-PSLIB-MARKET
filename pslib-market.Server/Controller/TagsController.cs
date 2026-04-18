@@ -9,7 +9,7 @@ namespace pslib_market.Server.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+
     public class TagsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -23,17 +23,26 @@ namespace pslib_market.Server.Controller
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<string>>> GetTags()
         {
-            var tags = await _context.Tags.ToListAsync();
+            var tags = await _context.Tags.Select(t => t.Name).ToListAsync();
             return Ok(tags);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Tag>> PostTag(Tag tag)
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<Tag>> CreateTag([FromBody] string tagName)
         {
-            _context.Tags.Add(tag);
-            await _context.SaveChangesAsync();
+            if(string.IsNullOrEmpty(tagName)) return BadRequest("Název tagu nesmí být prázdný.");
+            tagName = tagName.Trim();
 
-            return CreatedAtAction(nameof(GetTags), new { id = tag.Id }, tag);
+            bool tagExists = await _context.Tags.AnyAsync(t => t.Name.ToLower() == tagName.ToLower());
+            if (tagExists) return BadRequest("Tag s tímto názvem již existuje.");
+
+            var newTag = new Tag { Name = tagName };
+            _context.Tags.Add(newTag);
+            await _context.SaveChangesAsync();
+            return Ok(newTag);
+
+
         }
 
 
