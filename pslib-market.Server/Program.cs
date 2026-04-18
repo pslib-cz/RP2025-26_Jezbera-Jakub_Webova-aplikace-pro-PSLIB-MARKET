@@ -27,9 +27,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Sandbox")));
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireClaim("market.admin", "1"));
