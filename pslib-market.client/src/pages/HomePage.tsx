@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getBooks } from '../services/apiService'
 import BookCard from '../components/BookCard/BookCard'
 import type { Book } from '../types/models'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import FlashMessage, { type FlashMessageType } from '../components/FlashMessage'
 import styles from './HomePage.module.css'
 
@@ -14,6 +14,7 @@ type FlashMessageState = {
 const HomePage = () => {
 
   const [books, setBooks] = useState<Book[]>([])
+  const [searchParams] = useSearchParams()
   const location = useLocation()
   const navigate = useNavigate()
   const [flashMessage, setFlashMessage] = useState<string | null>(() => {
@@ -40,11 +41,27 @@ const HomePage = () => {
     navigate(location.pathname, { replace: true, state: null })
   }, [location.pathname, location.state, navigate])
 
+  const searchQuery = (searchParams.get('q') ?? '').trim().toLowerCase()
+
+  const filteredBooks = !searchQuery
+    ? books
+    : books.filter((book) => {
+      const searchableValues = [
+        book.title,
+        book.description ?? '',
+        book.ownerName,
+        (book.tags ?? []).join(' '),
+      ]
+
+      return searchableValues.some((value) =>
+        value.toLowerCase().includes(searchQuery),
+      )
+    })
+
 
 
   return (
     <main>
-      <h2>Nabídka knih</h2>
       {flashMessage && (
         <FlashMessage
           message={flashMessage}
@@ -53,7 +70,7 @@ const HomePage = () => {
         />
       )}
       <div className={styles.bookGrid}>
-        {books.map((book) => (
+        {filteredBooks.map((book) => (
           <BookCard
             key={book.id}
             id={book.id}
