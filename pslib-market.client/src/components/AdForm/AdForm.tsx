@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { API_BASE_URL, getTags, type Tag } from "../../services/apiService";
+import { API_BASE_URL, getTags } from "../../services/apiService";
 import styles from "./AdForm.module.css";
 import { useAuth } from "react-oidc-context";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ const CONDITIONS = [
   { value: 3, label: "Poškozený" },
 ] as const;
 
-const adSchema = z.object({
+const adSchema = z.object({ 
   title: z.string().trim().min(1, "Jméno knihy je povinné"),
   subject: z.string().trim().min(1, "Předmět je povinný"),
   condition: z.string().trim().min(1, "Vyber stav"),
@@ -49,7 +49,7 @@ interface AdFormProps {
 const AdForm = ({ initialData }: AdFormProps) => {
   const isEditMode = !!initialData;
   const [fileName, setFileName] = useState("");
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [flashType, setFlashType] = useState<FlashMessageType>("error");
   const auth = useAuth();
@@ -198,8 +198,8 @@ const AdForm = ({ initialData }: AdFormProps) => {
             Vyber předmět
           </option>
           {tags.map((tag) => (
-            <option key={tag.id} value={tag.name}>
-              {tag.name}
+            <option key={tag} value={tag}>
+              {tag}
             </option>
           ))}
         </select>
