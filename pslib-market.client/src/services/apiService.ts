@@ -1,11 +1,5 @@
 import type { Book } from '../types/models';
 
-
-export interface Tag {
-  id: number;
-  name: string;
-}
-
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5263/api';
 
 const createAuthHeaders = (token?: string): HeadersInit => {
@@ -28,7 +22,7 @@ export const getBooks = async (token?: string): Promise<Book[]> => {
   return await response.json();
 };
 
-export const getTags = async (): Promise<Tag[]> => {
+export const getTags = async (): Promise<string[]> => {
   const response = await fetch(`${API_BASE_URL}/tags`);
 
   if (!response.ok) {
@@ -41,7 +35,7 @@ export const getTags = async (): Promise<Tag[]> => {
 
 export const getMyBooks = async (token: string): Promise<Book[]> => {
   const response = await fetch(`${API_BASE_URL}/books/my`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: createAuthHeaders(token),
   });
 
   if (!response.ok) {
@@ -55,7 +49,7 @@ export const changeBookSaleStatus = async (bookId: number, newStatus: number, to
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/status`, {
     method: 'PATCH',
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...createAuthHeaders(token),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(newStatus),
@@ -66,3 +60,43 @@ export const changeBookSaleStatus = async (bookId: number, newStatus: number, to
   }
 };
 
+
+export const createTag = async (tagName: string, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/tags`, {
+    method: 'POST',
+    headers: {
+      ...createAuthHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(tagName),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se vytvořit nový předmět.');
+  }
+};
+
+export const approveBook = async (bookId: number, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/approve`, {
+    method: 'PATCH',
+    headers: createAuthHeaders(token),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se schválit inzerát.');
+  }
+};
+
+export const rejectBook = async (bookId: number, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/reject`, {
+    method: 'PATCH',
+    headers: createAuthHeaders(token),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se zamítnout inzerát.');
+  }
+};

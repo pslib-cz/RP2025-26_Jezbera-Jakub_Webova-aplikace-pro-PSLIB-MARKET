@@ -5,6 +5,11 @@
 	gap: .5rem;
 }
 
+.brandLink {
+	text-decoration: none;
+	color: inherit;
+}
+
 .headerShell {
 	background-color: var(--white);
 }

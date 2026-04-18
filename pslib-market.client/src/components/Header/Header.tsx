@@ -110,6 +110,8 @@ const Header = () => {
   const isMyOffersPage = location.pathname === "/moje-inzeraty";
   const shouldShowHomeFirst = isCreateOfferPage || isMyOffersPage;
 
+  const isAdmin = auth.isAuthenticated && auth.user?.profile?.["market.admin"] === "1"
+
   const handleLocalSignOut = async () => {
     await auth.removeUser();
     navigate("/");
@@ -118,7 +120,11 @@ const Header = () => {
   return (
     <div className={styles.headerShell}>
       <div className={styles.header}>
-        <div className={styles.brand}>
+        <Link
+          to="/"
+          className={`${styles.brand} ${styles.brandLink}`.trim()}
+          aria-label="Přejít na domovskou stránku"
+        >
           <img
             className={styles.logo}
             src="/logo.svg"
@@ -129,7 +135,7 @@ const Header = () => {
           <h1 className={styles.title}>
             PSLIB <span className={styles.highlight}>MARKET</span>
           </h1>
-        </div>
+        </Link>
         <div className={styles.quickActions}>
           <button
             type="button"
@@ -167,6 +173,14 @@ const Header = () => {
         <div className={styles.actionsRight}>
           <nav className={styles.nav} aria-label="Hlavní navigace">
             <menu className={styles.menu}>
+              {isAdmin && (
+                <li>
+                  <Link className={`${styles.navLink} ${styles.navLinkPrimary}`.trim()}
+                    to="/audit-log">
+                    Admin Panel
+                  </Link>
+                </li>
+              )}
               <li>
                 {shouldShowHomeFirst ? (
                   <Link
@@ -230,6 +244,7 @@ const Header = () => {
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
