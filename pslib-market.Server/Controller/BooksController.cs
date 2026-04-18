@@ -81,10 +81,14 @@ namespace pslib_market.Server.Controller
             {
                 return Unauthorized("Neplatné uživatelské údaje.");
             }
+            if ( dto.Photo == null || dto.Photo.Length == 0)
+            {
+                return BadRequest("Fotka je povinná.");
+            }
 
-            byte[] imageBytes = null;
+            byte[]? imageBytes = null;
             using var ms = new MemoryStream();
-            using (var image = await SixLabors.ImageSharp.Image.LoadAsync(dto.Photo.OpenReadStream()))
+            using (var image = await Image.LoadAsync(dto.Photo.OpenReadStream()))
             {
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
@@ -129,7 +133,7 @@ namespace pslib_market.Server.Controller
             return CreatedAtAction(nameof(GetBooks), new { id = book.Id }, book);
         }
 
-        
+
 
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> ChangeStatus(int id, [FromBody] SaleStatus newStatus)
@@ -143,7 +147,7 @@ namespace pslib_market.Server.Controller
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
                 ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-            if ( book.OwnerId != userId ) return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
+            if (book.OwnerId != userId) return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
 
             book.SaleStatus = newStatus;
             book.LastUpdatedAt = DateTime.UtcNow;
@@ -237,7 +241,11 @@ namespace pslib_market.Server.Controller
             }
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
              ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            if (book.OwnerId != userId)
+
+            bool isAdmin = User.HasClaim(c => c.Type == "market.admin" && c.Value == "1");
+
+
+            if (book.OwnerId != userId && !isAdmin)
             {
                 return Forbid("Nemáte oprávnění upravovat tento inzerát.");
             }
@@ -251,14 +259,14 @@ namespace pslib_market.Server.Controller
             {
                 book.Tags.Clear();
                 var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == dto.Subject);
-                if (tag != null )
+                if (tag != null)
                 {
                     book.Tags.Add(tag);
                 }
             }
             if (dto.Photo != null && dto.Photo.Length > 0)
             {
-                byte[] imageBytes = null;
+                byte[]? imageBytes = null;
                 using var ms = new MemoryStream();
                 using (var image = await Image.LoadAsync(dto.Photo.OpenReadStream()))
                 {
@@ -313,7 +321,55 @@ namespace pslib_market.Server.Controller
         }
 
 
+        [HttpPatch("{id}/approve")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> ApproveBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-    }
+            if (book == null) return NotFound("Inzerát nebyl nalezen.");
+            if (book.SaleStatus != SaleStatus.Pending) return BadRequest("Inzerát není ve stavu čekající na schválení.");
+            
+            book.SaleStatus = SaleStatus.Available;
+            book.LastUpdatedAt = DateTime.UtcNow;
+
+            _context.BookActivityLogs.Add(new BookActivityLog
+            {
+                BookId = id,
+                UserId = adminId,
+                Action = "Approve",
+                Details = "Inzerát schválen administrátorem.",
+                TimeStamp = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        [HttpPatch("{id}/reject")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> RejectBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound("Inzerát nebyl nalezen.");
+
+            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            book.SaleStatus = SaleStatus.Rejected;
+            book.LastUpdatedAt = DateTime.UtcNow;
+            _context.BookActivityLogs.Add(new BookActivityLog
+            {
+                BookId = id,
+                UserId = adminId,
+                Action = "Reject",
+                Details = "Inzerát zamítnut administrátorem.",
+                TimeStamp = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+            return NoContent();
+
+
+        }
+        }
 }
 
