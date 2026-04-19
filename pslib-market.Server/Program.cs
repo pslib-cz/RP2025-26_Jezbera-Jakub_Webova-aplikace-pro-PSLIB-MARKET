@@ -31,18 +31,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Sandbox")));
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireAssertion(context =>
-        {
-            bool hasAdminClaim = context.User.HasClaim(c => c.Type == "market.admin" && c.Value == "1");
-
-            string? userEmail = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-                             ?? context.User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-            bool isAppOwner = userEmail == "jakub.jezbera.023@pslib.cz";
-
-            return hasAdminClaim || isAppOwner;
-        }));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("market.admin", "1"));
 });
 
 
