@@ -59,7 +59,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
     register,
     handleSubmit,
     setError,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<AdFormInput, unknown, AdFormValues>({
     resolver: zodResolver(adSchema),
     defaultValues: initialData
@@ -318,7 +318,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
       </div>
 
       <div className={styles.submitButtonWrap}>
-        <button className={styles.publishButton} type="submit">
+        <button className={styles.publishButton} type="submit" disabled={isSubmitting}>
           {isEditMode ? "Uložit změny" : "Publikovat inzerát"}
         </button>
       </div>
