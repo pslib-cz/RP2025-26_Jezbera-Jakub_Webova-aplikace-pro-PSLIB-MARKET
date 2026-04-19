@@ -20,6 +20,25 @@ namespace pslib_market.Server.Controller
     {
         private readonly ApplicationDbContext _context;
 
+        private static bool HasAdminAccess(ClaimsPrincipal user)
+        {
+            static bool IsAdminValue(string value)
+                => string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+
+            var hasMarketAdminClaim = user.Claims.Any(c =>
+                string.Equals(c.Type, "market.admin", StringComparison.OrdinalIgnoreCase)
+                && IsAdminValue(c.Value));
+
+            var hasAdminRole = user.Claims.Any(c =>
+                (string.Equals(c.Type, ClaimTypes.Role, StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(c.Type, "role", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(c.Type, "roles", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(c.Value, "market.admin", StringComparison.OrdinalIgnoreCase));
+
+            return hasMarketAdminClaim || hasAdminRole;
+        }
+
         public BooksController(ApplicationDbContext context)
         {
             _context = context;
@@ -269,7 +288,7 @@ namespace pslib_market.Server.Controller
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
              ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-            bool isAdmin = User.HasClaim(c => c.Type == "market.admin" && c.Value == "1");
+            bool isAdmin = HasAdminAccess(User);
 
 
             if (book.OwnerId != userId && !isAdmin)

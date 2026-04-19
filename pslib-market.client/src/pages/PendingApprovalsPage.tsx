@@ -9,6 +9,29 @@ import styles from "./PendingApprovalsPage.module.css";
 
 const getImageUrl = (bookId: number): string => `${API_BASE_URL}/books/${bookId}/image`;
 
+const hasAdminAccess = (profile: Record<string, unknown> | undefined): boolean => {
+  if (!profile) return false;
+
+  const adminClaim = profile["market.admin"];
+  const adminRole = profile["role"];
+
+  const claimValues = Array.isArray(adminClaim) ? adminClaim : [adminClaim];
+  const roleValues = Array.isArray(adminRole) ? adminRole : [adminRole];
+
+  const hasMarketAdminClaim = claimValues.some((value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") return value.toLowerCase() === "1" || value.toLowerCase() === "true";
+    return false;
+  });
+
+  const hasAdminRole = roleValues.some(
+    (value) => typeof value === "string" && value.toLowerCase() === "market.admin"
+  );
+
+  return hasMarketAdminClaim || hasAdminRole;
+};
+
 export default function PendingApprovalsPage() {
   const auth = useAuth();
   const [pendingBooks, setPendingBooks] = useState<Book[]>([]);
@@ -17,7 +40,7 @@ export default function PendingApprovalsPage() {
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [flashType, setFlashType] = useState<FlashMessageType>("success");
 
-  const isAdmin = auth.isAuthenticated && auth.user?.profile?.["market.admin"] === "1";
+  const isAdmin = auth.isAuthenticated && hasAdminAccess(auth.user?.profile as Record<string, unknown> | undefined);
 
   const loadPendingBooks = useCallback(async () => {
     const token = auth.user?.access_token;
