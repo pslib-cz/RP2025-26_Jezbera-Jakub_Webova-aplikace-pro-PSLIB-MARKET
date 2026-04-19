@@ -21,8 +21,8 @@ const postLogoutRedirectUri =
         : configuredPostLogoutRedirectUri;
 
 const oidcConfig = {
-    authority: import.meta.env.VITE_OIDC_AUTHORITY,
-    client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
+    authority: "https://oauth.pslib.cz",
+    client_id: "market",
     // client_secret: 'marketpslibcloudviaoauth', // dnes už ne, jde o public clienta, místo secret použijeme PKCE flow
     redirect_uri: redirectUri,
     post_logout_redirect_uri: postLogoutRedirectUri,
