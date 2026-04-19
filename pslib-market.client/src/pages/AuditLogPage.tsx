@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import AdminNav from '../components/AdminNav/AdminNav'
+import styles from './AuditLogPage.module.css'
 
 const AuditLogPage = () => {
   useEffect(() => {
@@ -6,8 +8,9 @@ const AuditLogPage = () => {
   }, [])
 
   return (
-    <main>
-      <h2>Audit log</h2>
+    <main className={styles.page}>
+      <h2 className={styles.title}>Audit log</h2>
+      <AdminNav />
     </main>
   )
 }

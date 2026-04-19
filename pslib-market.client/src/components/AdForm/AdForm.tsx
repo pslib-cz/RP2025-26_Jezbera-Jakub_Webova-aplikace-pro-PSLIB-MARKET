@@ -146,7 +146,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
         state: {
           flashType: "success",
           flashMessage: isEditMode
-            ? "Inzerát byl úspěšně upraven."
+            ? "Inzerát byl upraven. Pokud jste změnil název, popis nebo fotku, čeká znovu na schválení."
             : "Inzerát bude brzy schválen.",
         },
       });

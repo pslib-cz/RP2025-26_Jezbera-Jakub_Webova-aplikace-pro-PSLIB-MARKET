@@ -176,8 +176,8 @@ const Header = () => {
               {isAdmin && (
                 <li>
                   <Link className={`${styles.navLink} ${styles.navLinkPrimary}`.trim()}
-                    to="/audit-log">
-                    Admin Panel
+                    to="/admin/schvalovani">
+                    Admin
                   </Link>
                 </li>
               )}

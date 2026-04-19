@@ -111,7 +111,7 @@ namespace pslib_market.Server.Controller
                 OwnerName = userName,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
-                SaleStatus = SaleStatus.Available,
+                SaleStatus = SaleStatus.Pending,
                 Condition = dto.Condition,
 
                 ImageBlob = imageBytes,
@@ -131,6 +131,33 @@ namespace pslib_market.Server.Controller
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetBooks), new { id = book.Id }, book);
+        }
+
+        [HttpGet("pending")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<IEnumerable<BookDto>>> GetPendingBooks()
+        {
+            var pendingBooks = await _context.Books
+                .Include(b => b.Tags)
+                .Where(b => b.SaleStatus == SaleStatus.Pending)
+                .OrderByDescending(b => b.LastUpdatedAt)
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Description = b.Description,
+                    Price = b.Price,
+                    OwnerId = b.OwnerId,
+                    SaleStatus = b.SaleStatus,
+                    Tags = b.Tags.Select(t => t.Name).ToList(),
+                    OwnerName = b.OwnerName,
+                    OwnerEmail = b.OwnerEmail,
+                    Condition = b.Condition,
+
+                })
+                .ToListAsync();
+
+            return Ok(pendingBooks);
         }
 
 
@@ -250,11 +277,22 @@ namespace pslib_market.Server.Controller
                 return Forbid("Nemáte oprávnění upravovat tento inzerát.");
             }
 
+            var hasModeratedChanges =
+                !string.Equals(book.Title, dto.Title, StringComparison.Ordinal) ||
+                !string.Equals(book.Description ?? string.Empty, dto.Description ?? string.Empty, StringComparison.Ordinal) ||
+                (dto.Photo != null && dto.Photo.Length > 0);
+
             book.Title = dto.Title;
             book.Description = dto.Description;
             book.Price = dto.Price;
             book.Condition = dto.Condition;
             book.LastUpdatedAt = DateTime.UtcNow;
+
+            if (hasModeratedChanges)
+            {
+                book.SaleStatus = SaleStatus.Pending;
+            }
+
             if (!string.IsNullOrEmpty(dto.Subject))
             {
                 book.Tags.Clear();
@@ -352,6 +390,7 @@ namespace pslib_market.Server.Controller
         {
             var book = await _context.Books.FindAsync(id);
             if (book == null) return NotFound("Inzerát nebyl nalezen.");
+            if (book.SaleStatus != SaleStatus.Pending) return BadRequest("Inzerát není ve stavu čekající na schválení.");
 
             var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 

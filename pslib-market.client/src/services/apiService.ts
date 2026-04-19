@@ -1,6 +1,11 @@
 import type { Book } from '../types/models';
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(configuredApiBaseUrl ?? '');
+
+const rawApiBaseUrl = import.meta.env.DEV && isLocalhostAbsoluteApi
+  ? '/api'
+  : configuredApiBaseUrl || '/api';
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 
 const createAuthHeaders = (token?: string): HeadersInit => {
@@ -100,4 +105,16 @@ export const rejectBook = async (bookId: number, token: string): Promise<void> =
     const errorMessage = await response.text();
     throw new Error(errorMessage || 'Nepodařilo se zamítnout inzerát.');
   }
+};
+
+export const getPendingBooks = async (token: string): Promise<Book[]> => {
+  const response = await fetch(`${API_BASE_URL}/books/pending`, {
+    headers: createAuthHeaders(token),
+  });
+
+  if (!response.ok) {
+    throw new Error('Nepodařilo se stáhnout čekající inzeráty z backendu.');
+  }
+
+  return await response.json();
 };

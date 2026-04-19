@@ -171,6 +171,10 @@ p {
         min-width: 280px;
     }
 
+    .cardImage {
+        max-height: 440px;
+    }
+
     .badgesOverlay {
         position: static;
         left: auto;

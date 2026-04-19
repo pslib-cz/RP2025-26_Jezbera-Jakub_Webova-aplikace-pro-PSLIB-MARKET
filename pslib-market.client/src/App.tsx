@@ -5,6 +5,7 @@ import { useAuth } from 'react-oidc-context';
 import AuditLogPage from './pages/AuditLogPage';
 import MyOffersPage from './pages/MyOffersPage';
 import CreateOfferPage from './pages/CreateOfferPage';
+import PendingApprovalsPage from './pages/PendingApprovalsPage';
 import Loader from './components/Loader';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,6 +24,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/*" element={<HomePage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/admin/schvalovani" element={<PendingApprovalsPage />} />
           <Route path="/audit-log" element={<AuditLogPage />} />
           <Route path="/moje-inzeraty" element={<MyOffersPage />} />
           <Route path="/vytvorit-inzerat" element={<CreateOfferPage />} />
