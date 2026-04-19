@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
 using Scalar.AspNetCore;
+using System.Security.Claims;
 using System.Security.Cryptography.Xml;
 using System.Text.Json.Serialization;
 
@@ -30,7 +31,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Sandbox")));
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("market.admin", "1"));
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAssertion(context =>
+        {
+            bool hasAdminClaim = context.User.HasClaim(c => c.Type == "market.admin" && c.Value == "1");
+
+            string? userEmail = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                             ?? context.User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+            bool isAppOwner = userEmail == "jakub.jezbera.023@pslib.cz";
+
+            return hasAdminClaim || isAppOwner;
+        }));
 });
 
 

@@ -16,11 +16,12 @@ export default function PendingApprovalsPage() {
   const [processingBookId, setProcessingBookId] = useState<number | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [flashType, setFlashType] = useState<FlashMessageType>("success");
-   const token = auth.user?.id_token;
 
   const isAdmin = auth.isAuthenticated && auth.user?.profile?.["market.admin"] === "1";
 
   const loadPendingBooks = useCallback(async () => {
+    const token = auth.user?.access_token;
+
     if (!token) {
       setIsLoading(false);
       return;
@@ -38,7 +39,7 @@ export default function PendingApprovalsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [auth.user?.access_token]);
 
   useEffect(() => {
     document.title = "Schvalování inzerátů | PSLIB Market";
@@ -54,6 +55,8 @@ export default function PendingApprovalsPage() {
   }, [auth.isAuthenticated, isAdmin, loadPendingBooks]);
 
   const handleDecision = async (bookId: number, action: "approve" | "reject") => {
+    const token = auth.user?.access_token;
+
     if (!token) {
       setFlashType("error");
       setFlashMessage("Nejste přihlášený.");
