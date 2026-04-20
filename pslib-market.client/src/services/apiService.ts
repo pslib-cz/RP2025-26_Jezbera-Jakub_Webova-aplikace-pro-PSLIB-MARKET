@@ -118,3 +118,15 @@ export const getPendingBooks = async (token: string): Promise<Book[]> => {
 
   return await response.json();
 };
+
+export const reserveBook = async (bookId: number, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/reserve`, {
+    method: 'POST',
+    headers: createAuthHeaders(token),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se odeslat zájem o knihu.');
+  }
+};

@@ -1,5 +1,6 @@
-import React from "react";
-import { API_BASE_URL } from "../../services/apiService";
+import React, { useState } from "react";
+import { useAuth } from "react-oidc-context";
+import { API_BASE_URL, reserveBook } from "../../services/apiService";
 import styles from "./BookCard.module.css";
 import Button from "../Button";
 
@@ -64,6 +65,40 @@ const BookCard: React.FC<BookCardProps> = ({
   condition,
   tags,
 }) => {
+  const auth = useAuth();
+  const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle");
+  const [interestError, setInterestError] = useState<string | null>(null);
+
+  const handleInterestClick = async () => {
+    if (interestState === "sending" || interestState === "sent") {
+      return;
+    }
+
+    const token = auth.user?.access_token;
+    if (!token) {
+      await auth.signinRedirect();
+      return;
+    }
+
+    setInterestError(null);
+    setInterestState("sending");
+
+    try {
+      await reserveBook(id, token);
+      setInterestState("sent");
+    } catch (error) {
+      setInterestState("idle");
+      setInterestError(error instanceof Error ? error.message : "Nepodařilo se odeslat zájem o knihu.");
+    }
+  };
+
+  const interestButtonText =
+    interestState === "sending"
+      ? "Posílám..."
+      : interestState === "sent"
+        ? "Posláno"
+        : "Mám zájem";
+
   const normalizedTags = (tags ?? []).filter(Boolean);
   const numCondition =
     typeof condition === "string" ? parseInt(condition, 10) : condition;
@@ -115,13 +150,25 @@ const BookCard: React.FC<BookCardProps> = ({
         
         <div className={styles.cardFooter}>
           <p className={styles.cardPrice}>{price},-</p>
-          <Button
-            text="Mám zájem"
-            onClick={() =>
-              (window.location.href = `mailto:${ownerEmail}?subject=Zájem o knihu ${title}`)
-            }
-          />
+          <div
+            className={`${styles.interestButtonWrap} ${
+              interestState === "sending"
+                ? styles.interestButtonSending
+                : interestState === "sent"
+                  ? styles.interestButtonSent
+                  : ""
+            }`}
+          >
+            <Button
+              text={interestButtonText}
+              onClick={() => {
+                void handleInterestClick();
+              }}
+              disabled={interestState === "sending" || interestState === "sent"}
+            />
+          </div>
         </div>
+        {interestError && <p className={styles.cardActionError}>{interestError}</p>}
       </div>
     </div>
   );

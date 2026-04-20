@@ -87,6 +87,32 @@ p {
 .cardFooter > :global(button) {
     width: 100%;
 }
+
+.interestButtonWrap :global(button) {
+    width: 100%;
+    transition: background-color .25s ease, border-color .25s ease, color .25s ease, transform .25s ease;
+}
+
+.interestButtonSending :global(button) {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+    animation: interestLoadingPulse 1s ease-in-out infinite;
+}
+
+.interestButtonSent :global(button) {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+    animation: interestSuccess .45s ease;
+}
+
+.cardActionError {
+    margin-top: .25rem;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+}
 .cardPrice{
     color: #22C55E;
     font-size: 22px;
@@ -170,6 +196,33 @@ p {
 
 .conditionDamaged {
     border-color: var(--condition-damaged-border);
+}
+
+@keyframes interestLoadingPulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.02);
+        opacity: .92;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes interestSuccess {
+    0% {
+        transform: scale(1);
+    }
+    55% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 @media (min-width: 920px) {

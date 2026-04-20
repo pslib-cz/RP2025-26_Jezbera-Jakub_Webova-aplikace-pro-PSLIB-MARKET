@@ -160,14 +160,14 @@ const Header = () => {
             <Button
               icon={<SignInIcon />}
               iconOnly
-             onClick={() => {
-  console.log("1. Pokus o přihlášení zahájen...");
-  console.log("2. OIDC Nastavení, které vidí React:", auth.settings);
-  
-  auth.signinRedirect().catch((err) => {
-    console.error("3. KRITICKÁ CHYBA PŘI OAUTH:", err);
-  });
-}}
+              onClick={() => {
+                console.log("1. Pokus o přihlášení zahájen...");
+                console.log("2. OIDC Nastavení, které vidí React:", auth.settings);
+
+                auth.signinRedirect().catch((err) => {
+                  console.error("3. KRITICKÁ CHYBA PŘI OAUTH:", err);
+                });
+              }}
               ariaLabel="Přihlásit se"
             />
           )}
@@ -246,13 +246,13 @@ const Header = () => {
                 icon={<SignInIcon />}
                 iconOnly
                 onClick={() => {
-  console.log("1. Pokus o přihlášení zahájen...");
-  console.log("2. OIDC Nastavení, které vidí React:", auth.settings);
-  
-  auth.signinRedirect().catch((err) => {
-    console.error("3. KRITICKÁ CHYBA PŘI OAUTH:", err);
-  });
-}}
+                  console.log("1. Pokus o přihlášení zahájen...");
+                  console.log("2. OIDC Nastavení, které vidí React:", auth.settings);
+
+                  auth.signinRedirect().catch((err) => {
+                    console.error("3. KRITICKÁ CHYBA PŘI OAUTH:", err);
+                  });
+                }}
                 ariaLabel="Přihlásit se"
               />
             )}
