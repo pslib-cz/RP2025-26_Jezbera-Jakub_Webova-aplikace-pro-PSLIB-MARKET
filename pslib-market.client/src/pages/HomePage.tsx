@@ -128,7 +128,6 @@ const HomePage = () => {
               description={book.description}
               price={book.price}
               ownerName={book.ownerName}
-              ownerEmail={book.ownerEmail}
               condition={book.condition}
               tags={book.tags}
             />

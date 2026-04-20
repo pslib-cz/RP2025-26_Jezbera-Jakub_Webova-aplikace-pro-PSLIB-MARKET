@@ -10,7 +10,6 @@ type BookCardProps = {
   description?: string;
   price: number;
   ownerName: string;
-  ownerEmail: string;
   condition?: number | string;
   tags?: string[];
 };
@@ -61,7 +60,6 @@ const BookCard: React.FC<BookCardProps> = ({
   description,
   price,
   ownerName,
-  ownerEmail,
   condition,
   tags,
 }) => {
