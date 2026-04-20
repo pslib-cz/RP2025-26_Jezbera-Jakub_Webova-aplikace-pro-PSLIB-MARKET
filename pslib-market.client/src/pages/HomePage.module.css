@@ -14,35 +14,35 @@
   margin: 1.5rem auto;
   padding: 1.5rem;
   border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 1px solid var(--background);
+  background: linear-gradient(135deg, var(--white), var(--background));
   text-align: center;
 }
 
 .statePanelError {
-  border-color: #fecaca;
-  background: linear-gradient(135deg, #fff7f7, #fff1f2);
+  border-color: var(--primary-blue);
+  background: linear-gradient(135deg, var(--white), var(--background));
 }
 
 .stateTitle {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--black);
 }
 
 .stateText {
   margin: 0.5rem 0 0;
   font-size: 0.95rem;
-  color: #475569;
+  color: var(--black);
 }
 
 .loader {
   width: 42px;
   height: 42px;
   margin: 0 auto 0.75rem;
-  border: 4px solid #dbeafe;
-  border-top-color: #2563eb;
+  border: 4px solid var(--background);
+  border-top-color: var(--primary-blue);
   border-radius: 50%;
   animation: spin 0.85s linear infinite;
 }
@@ -51,19 +51,19 @@
   margin-top: 1rem;
   border: none;
   border-radius: 999px;
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--primary-blue);
+  color: var(--white);
   font-weight: 600;
   padding: 0.55rem 1rem;
   cursor: pointer;
 }
 
 .retryButton:hover {
-  background: #1d4ed8;
+  filter: brightness(0.92);
 }
 
 .retryButton:focus-visible {
-  outline: 2px solid #1d4ed8;
+  outline: 2px solid var(--primary-blue);
   outline-offset: 2px;
 }
 
