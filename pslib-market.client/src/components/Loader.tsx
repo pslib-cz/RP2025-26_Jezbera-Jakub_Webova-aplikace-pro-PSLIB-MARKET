@@ -1,6 +1,10 @@
+import styles from './Loader.module.css'
+
 const Loader = () => {
   return (
-    <div>Loader</div>
+    <div className={styles.loaderWrap} role='status' aria-label='Načítání'>
+      <div className={styles.loaderSpinner} aria-hidden='true' />
+    </div>
   )
 }
 

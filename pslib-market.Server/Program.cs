@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
+using pslib_market.Server.Services;
 using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
@@ -52,6 +53,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Sandbox")));
+builder.Services.AddSingleton<EmailService>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => HasAdminAccess(context.User)));

@@ -37,6 +37,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    min-width: 0;
 }
 
 .imageWrap {
@@ -49,6 +50,7 @@
     bottom: 14px;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
     z-index: 1;
 }
@@ -66,10 +68,14 @@ p {
     flex-direction: column;
     gap: 1.5rem;
     padding: 0 1rem;
+    min-width: 0;
 }
 .cardOwner{
     font-size: 14px;
     font-weight: 400;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .cardFooter {

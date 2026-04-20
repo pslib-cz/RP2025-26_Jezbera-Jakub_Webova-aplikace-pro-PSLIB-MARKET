@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using pslib_market.Server.Data;
 using pslib_market.Server.Models;
 using pslib_market.Server.Models.Enums;
+using pslib_market.Server.Services;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
@@ -19,6 +20,9 @@ namespace pslib_market.Server.Controller
     public class BooksController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
+        private readonly ILogger<BooksController> _logger;
+        private readonly IConfiguration _configuration;
 
         private static bool HasAdminAccess(ClaimsPrincipal user)
         {
@@ -39,9 +43,71 @@ namespace pslib_market.Server.Controller
             return hasMarketAdminClaim || hasAdminRole;
         }
 
-        public BooksController(ApplicationDbContext context)
+        private static string? GetUserEmailFromClaims(ClaimsPrincipal user)
+        {
+            return user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                ?? user.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+        }
+
+        private IEnumerable<string> GetAdminNotificationRecipients()
+        {
+            var recipients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var configuredRecipients = _configuration
+                .GetSection("Email:AdminNotificationRecipients")
+                .Get<string[]>() ?? [];
+
+            foreach (var recipient in configuredRecipients)
+            {
+                if (!string.IsNullOrWhiteSpace(recipient))
+                {
+                    recipients.Add(recipient.Trim());
+                }
+            }
+
+            if (HasAdminAccess(User))
+            {
+                var adminEmailFromClaim = GetUserEmailFromClaims(User);
+                if (!string.IsNullOrWhiteSpace(adminEmailFromClaim))
+                {
+                    recipients.Add(adminEmailFromClaim);
+                }
+            }
+
+            return recipients;
+        }
+
+        private string GetAppBaseUrl()
+        {
+            var configuredUrl = _configuration["Email:AppUrl"];
+            if (!string.IsNullOrWhiteSpace(configuredUrl))
+            {
+                return configuredUrl.TrimEnd('/');
+            }
+
+            return $"{Request.Scheme}://{Request.Host}".TrimEnd('/');
+        }
+
+        private string BuildEmailBodyWithAppLink(string body, string? appPath = null)
+        {
+            var baseUrl = GetAppBaseUrl();
+            var targetUrl = string.IsNullOrWhiteSpace(appPath)
+                ? baseUrl
+                : $"{baseUrl}/{appPath.TrimStart('/')}";
+
+            return $"{body}\n\nOtevřít PSLIB Market: {targetUrl}";
+        }
+
+        public BooksController(
+            ApplicationDbContext context,
+            EmailService emailService,
+            ILogger<BooksController> logger,
+            IConfiguration configuration)
         {
             _context = context;
+            _emailService = emailService;
+            _logger = logger;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -149,6 +215,30 @@ namespace pslib_market.Server.Controller
 
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var recipients = GetAdminNotificationRecipients().ToList();
+                var subject = "Nový inzerát ke schválení";
+                var body = BuildEmailBodyWithAppLink(
+                    $"Uživatel {userName} vytvořil inzerát '{dto.Title}', který čeká na schválení.",
+                    "admin/schvalovani");
+
+                if (recipients.Count == 0)
+                {
+                    _logger.LogWarning("Nenalezen žádný příjemce admin notifikace pro nový inzerát {BookId}.", book.Id);
+                }
+
+                foreach (var recipient in recipients)
+                {
+                    await _emailService.SendEmailAsync(recipient, subject, body);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Nepodařilo se odeslat upozornění adminovi na nový inzerát {BookId}.", book.Id);
+            }
+
             return CreatedAtAction(nameof(GetBooks), new { id = book.Id }, book);
         }
 
@@ -271,6 +361,20 @@ namespace pslib_market.Server.Controller
                 book.SaleStatus = SaleStatus.Reserved;
             }
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var subject = "Nová rezervace vaší knihy";
+                var body = BuildEmailBodyWithAppLink(
+                    $"Dobrý den, uživatel {userName} si právě rezervoval vaši knihu '{book.Title}'. Spojte se s ním na emailu: {userEmail}.",
+                    "moje-inzeraty");
+                await _emailService.SendEmailAsync(book.OwnerEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Nepodařilo se odeslat upozornění majiteli inzerátu {BookId} o nové rezervaci.", id);
+            }
+
             return Ok("Inzerát byl úspěšně rezervován.");
         }
 
@@ -310,6 +414,29 @@ namespace pslib_market.Server.Controller
             if (hasModeratedChanges)
             {
                 book.SaleStatus = SaleStatus.Pending;
+
+                try
+                {
+                    var recipients = GetAdminNotificationRecipients().ToList();
+                    var subject = "Upravený inzerát ke schválení";
+                    var body = BuildEmailBodyWithAppLink(
+                        $"Inzerát '{book.Title}' byl upraven uživatelem a čeká na nové schválení.",
+                        "admin/schvalovani");
+
+                    if (recipients.Count == 0)
+                    {
+                        _logger.LogWarning("Nenalezen žádný příjemce admin notifikace pro upravený inzerát {BookId}.", book.Id);
+                    }
+
+                    foreach (var recipient in recipients)
+                    {
+                        await _emailService.SendEmailAsync(recipient, subject, body);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Nepodařilo se odeslat upozornění adminovi na úpravu inzerátu {BookId}.", book.Id);
+                }
             }
 
             if (!string.IsNullOrEmpty(dto.Subject))
@@ -401,6 +528,19 @@ namespace pslib_market.Server.Controller
             });
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var subject = "Váš inzerát byl schválen";
+                var body = BuildEmailBodyWithAppLink(
+                    $"Dobrý den, váš inzerát na knihu '{book.Title}' byl právě schválen a je viditelný pro ostatní.");
+                await _emailService.SendEmailAsync(book.OwnerEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Nepodařilo se odeslat schvalovací email pro inzerát {BookId}.", id);
+            }
+
             return NoContent();
         }
         [HttpPatch("{id}/reject")]
@@ -424,6 +564,19 @@ namespace pslib_market.Server.Controller
                 TimeStamp = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var subject = "Váš inzerát byl zamítnut";
+                var body = BuildEmailBodyWithAppLink(
+                    $"Dobrý den, váš inzerát na knihu '{book.Title}' byl administrátorem zamítnut.");
+                await _emailService.SendEmailAsync(book.OwnerEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Nepodařilo se odeslat zamítací email pro inzerát {BookId}.", id);
+            }
+
             return NoContent();
 
 

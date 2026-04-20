@@ -14,11 +14,11 @@ const SearchBar = () => {
   const [searchParams] = useSearchParams()
   const searchTerm = searchParams.get('q') ?? ''
 
-  const updateSearch = (value: string) => {
+  const updateSearch = (value: string, trimValue = true) => {
     const params = new URLSearchParams()
-    const normalizedValue = value.trim()
+    const normalizedValue = trimValue ? value.trim() : value
 
-    if (normalizedValue) {
+    if (normalizedValue.trim()) {
       params.set('q', normalizedValue)
     }
 
@@ -35,7 +35,7 @@ const SearchBar = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextValue = e.target.value
-    updateSearch(nextValue)
+    updateSearch(nextValue, false)
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
