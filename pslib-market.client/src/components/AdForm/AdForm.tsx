@@ -74,6 +74,14 @@ const AdForm = ({ initialData }: AdFormProps) => {
   });
 
   const photoRegister = register("photo");
+  const submitLabel = isSubmitting
+    ? "Odesílám..."
+    : isEditMode
+      ? "Uložit změny"
+      : "Publikovat inzerát";
+  const submitHint = isSubmitting
+    ? "Odesílání může trvat několik sekund. Formulář nechávejte otevřený."
+    : null;
 
   useEffect(() => {
     const loadTags = async () => {
@@ -158,7 +166,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
   };
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+    <form className={styles.form} onSubmit={handleSubmit(onSubmit)} aria-busy={isSubmitting}>
       {flashMessage && (
         <div className={styles.flashWrap}>
           <FlashMessage
@@ -318,9 +326,14 @@ const AdForm = ({ initialData }: AdFormProps) => {
       </div>
 
       <div className={styles.submitButtonWrap}>
-        <button className={styles.publishButton} type="submit" disabled={isSubmitting}>
-          {isEditMode ? "Uložit změny" : "Publikovat inzerát"}
+        <button className={styles.publishButton} type="submit" disabled={isSubmitting} aria-disabled={isSubmitting}>
+          {submitLabel}
         </button>
+        {submitHint && (
+          <p className={styles.submitHint} role="status" aria-live="polite">
+            {submitHint}
+          </p>
+        )}
       </div>
     </form>
   );
