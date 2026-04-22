@@ -77,7 +77,7 @@ const HomePage = () => {
   const hasNoSearchResults = !isLoading && !loadError && books.length > 0 && filteredBooks.length === 0
 
   return (
-    <main>
+    <main className={styles.page}>
       {flashMessage && (
         <FlashMessage
           message={flashMessage}
@@ -128,6 +128,7 @@ const HomePage = () => {
               description={book.description}
               price={book.price}
               ownerName={book.ownerName}
+              saleStatus={book.saleStatus}
               condition={book.condition}
               tags={book.tags}
             />

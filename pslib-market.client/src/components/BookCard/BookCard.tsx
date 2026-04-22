@@ -10,9 +10,12 @@ type BookCardProps = {
   description?: string;
   price: number;
   ownerName: string;
+  saleStatus?: number;
   condition?: number | string;
   tags?: string[];
 };
+
+const RESERVED_STATUS = 1;
 
 const normalizeSubject = (value: string) =>
   value
@@ -48,8 +51,8 @@ const getConditionLabel = (conditionValue?: number | string) => {
   switch (numValue) {
     case 0: return "Velmi dobrý";
     case 1: return "Dobrý";
-    case 2: return "Popsaná";
-    case 3: return "Poškozená";
+    case 2: return "Popsaný";
+    case 3: return "Poškozený";
     default: return "Neznámý stav"; 
   }
 };
@@ -60,12 +63,14 @@ const BookCard: React.FC<BookCardProps> = ({
   description,
   price,
   ownerName,
+  saleStatus,
   condition,
   tags,
 }) => {
   const auth = useAuth();
   const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle");
   const [interestError, setInterestError] = useState<string | null>(null);
+  const isReserved = saleStatus === RESERVED_STATUS;
 
   const handleInterestClick = async () => {
     if (interestState === "sending" || interestState === "sent") {
@@ -94,8 +99,12 @@ const BookCard: React.FC<BookCardProps> = ({
     interestState === "sending"
       ? "Posílám..."
       : interestState === "sent"
-        ? "Posláno"
-        : "Mám zájem";
+        ? isReserved
+          ? "Zařazeno"
+          : "Posláno"
+        : isReserved
+          ? "Zařadit do fronty"
+          : "Mám zájem";
 
   const normalizedTags = (tags ?? []).filter(Boolean);
   const numCondition =
@@ -113,6 +122,8 @@ const BookCard: React.FC<BookCardProps> = ({
           src={`${API_BASE_URL}/books/${id}/image`}
           alt={title}
         />
+
+        {isReserved && <span className={styles.reservedBadge}>Rezervováno</span>}
 
         <div className={styles.badgesOverlay}>
           {normalizedTags.length > 0 && (

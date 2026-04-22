@@ -483,6 +483,7 @@ namespace pslib_market.Server.Controller
 
             var myBooks = await _context.Books
                 .Include(b => b.Tags)
+                .Include(b => b.Reservations)
                 .Where(b => b.OwnerId == userId)
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new BookDto
@@ -496,7 +497,16 @@ namespace pslib_market.Server.Controller
                     Tags = b.Tags.Select(t => t.Name).ToList(),
                     OwnerName = b.OwnerName,
                     OwnerEmail = b.OwnerEmail,
-                    Condition = b.Condition
+                    Condition = b.Condition,
+                    Reservations = b.Reservations
+                        .OrderBy(r => r.ReservedAt)
+                        .Select(r => new BookReservationDto
+                        {
+                            ReservedByUserName = r.ReservedByUserName,
+                            ReservedByUserEmail = r.ReservedByUserEmail,
+                            ReservedAt = r.ReservedAt
+                        })
+                        .ToList()
                 })
                 .ToListAsync();
             return Ok(myBooks);

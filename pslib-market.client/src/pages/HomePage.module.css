@@ -1,17 +1,19 @@
+.page {
+  width: min(1200px, 95vw);
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
 .bookGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  row-gap: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 1.5rem;
   align-items: start;
-  padding: 16px;
 }
 
 .statePanel {
-  max-width: 1200px;
-  margin: 1.5rem auto;
+  margin: 1.5rem 0;
   padding: 1.5rem;
   border-radius: 1rem;
   border: 1px solid var(--background);
@@ -74,14 +76,23 @@
 }
 
 @media (min-width: 920px) {
+  .page {
+    padding: 24px;
+  }
+
   .bookGrid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 378px));
-    justify-content: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 32px;
   }
 
   .statePanel {
-    margin: 2rem auto;
+    margin: 2rem 0;
     padding: 2rem;
+  }
+}
+
+@media (min-width: 1120px) {
+  .bookGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

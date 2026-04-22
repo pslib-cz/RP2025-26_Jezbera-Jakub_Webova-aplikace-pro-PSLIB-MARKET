@@ -27,6 +27,51 @@ const getReservationNames = (book: Book): string[] => {
 
 const getImageUrl = (bookId: number): string => `${API_BASE_URL}/books/${bookId}/image`;
 
+const AVAILABLE_STATUS = 0;
+const RESERVED_STATUS = 1;
+const SOLD_STATUS = 2;
+const ARCHIVED_STATUS = 3;
+const PENDING_STATUS = 4;
+const REJECTED_STATUS = 5;
+
+const getSaleStatusLabel = (status: number): string => {
+  switch (status) {
+    case 0:
+      return "Volné";
+    case 1:
+      return "Rezervováno";
+    case 2:
+      return "Prodáno";
+    case 3:
+      return "Archivováno";
+    case 4:
+      return "Čeká na schválení";
+    case 5:
+      return "Zamítnuto";
+    default:
+      return "Neznámý stav";
+  }
+};
+
+const getSaleStatusClassName = (status: number): string => {
+  switch (status) {
+    case AVAILABLE_STATUS:
+      return styles.statusAvailable;
+    case RESERVED_STATUS:
+      return styles.statusReserved;
+    case SOLD_STATUS:
+      return styles.statusSold;
+    case ARCHIVED_STATUS:
+      return styles.statusArchived;
+    case PENDING_STATUS:
+      return styles.statusPending;
+    case REJECTED_STATUS:
+      return styles.statusRejected;
+    default:
+      return styles.statusUnknown;
+  }
+};
+
 export default function MyOffersPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -90,9 +135,25 @@ export default function MyOffersPage() {
             const imageUrl = getImageUrl(book.id);
             const imageMissing = missingImageBookIds.has(book.id);
             const reservationNames = getReservationNames(book);
+            const isUnapproved =
+              book.saleStatus === PENDING_STATUS || book.saleStatus === REJECTED_STATUS;
+            const cardStateClassName =
+              book.saleStatus === AVAILABLE_STATUS
+                ? styles.cardAvailable
+                : book.saleStatus === RESERVED_STATUS
+                  ? styles.cardReserved
+                  : book.saleStatus === SOLD_STATUS
+                    ? styles.cardSold
+                    : book.saleStatus === ARCHIVED_STATUS
+                      ? styles.cardArchived
+                      : book.saleStatus === PENDING_STATUS
+                        ? styles.cardPending
+                        : book.saleStatus === REJECTED_STATUS
+                          ? styles.cardRejected
+                          : styles.cardUnknown;
 
             return (
-            <div key={book.id} className={styles.card}>
+            <div key={book.id} className={`${styles.card} ${cardStateClassName}`}>
               <div className={styles.headerRow}>
                 {!imageMissing ? (
                   <img
@@ -142,18 +203,27 @@ export default function MyOffersPage() {
                 <div className={styles.metaRow}>
                   <span className={styles.metaLabel}>Stav</span>
                   <div className={styles.statusControl}>
-                    <select
-                      className={styles.select}
-                      defaultValue={book.saleStatus}
-                      onChange={(e) => handleStatusChange(book.id, parseInt(e.target.value, 10))}
+                    <span
+                      className={`${styles.statusBadge} ${getSaleStatusClassName(book.saleStatus)}`}
                     >
-                      <option value={0}>Volné</option>
-                      <option value={1}>Rezervováno</option>
-                      <option value={2}>Prodáno</option>
-                      <option value={3}>Archivováno</option>
-                    </select>
+                      {getSaleStatusLabel(book.saleStatus)}
+                    </span>
                   </div>
                 </div>
+
+                {isUnapproved && (
+                  <div
+                    className={`${styles.moderationNotice} ${
+                      book.saleStatus === PENDING_STATUS
+                        ? styles.moderationNoticePending
+                        : styles.moderationNoticeRejected
+                    }`}
+                  >
+                    {book.saleStatus === PENDING_STATUS
+                      ? "Inzerát čeká na schválení adminem. Po schválení bude viditelný pro ostatní."
+                      : "Inzerát byl zamítnut. Uprav ho a odešli znovu ke schválení."}
+                  </div>
+                )}
 
                 <div className={styles.metaRow}>
                   <span className={styles.metaLabel}>Cena</span>
@@ -208,6 +278,35 @@ export default function MyOffersPage() {
                     )}
                   </ol>
                 </details>
+
+                {!isUnapproved && (
+                  <div className={styles.saleActions}>
+                    <button
+                      type="button"
+                      className={`${styles.saleButton} ${styles.buttonSold} ${
+                        book.saleStatus === SOLD_STATUS ? styles.activeSaleButton : ""
+                      }`}
+                      disabled={book.saleStatus === SOLD_STATUS}
+                      onClick={() => {
+                        void handleStatusChange(book.id, SOLD_STATUS);
+                      }}
+                    >
+                      Prodané
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.saleButton} ${styles.buttonAvailable} ${
+                        book.saleStatus === AVAILABLE_STATUS ? styles.activeSaleButton : ""
+                      }`}
+                      disabled={book.saleStatus === AVAILABLE_STATUS}
+                      onClick={() => {
+                        void handleStatusChange(book.id, AVAILABLE_STATUS);
+                      }}
+                    >
+                      Zpět do prodeje
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )})}

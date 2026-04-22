@@ -15,8 +15,14 @@ const CONDITIONS = [
   { value: 3, label: "Poškozený" },
 ] as const;
 
+const MAX_TITLE_LENGTH = 120;
+
 const adSchema = z.object({ 
-  title: z.string().trim().min(1, "Jméno knihy je povinné"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Jméno knihy je povinné")
+    .max(MAX_TITLE_LENGTH, `Název může mít maximálně ${MAX_TITLE_LENGTH} znaků`),
   subject: z.string().trim().min(1, "Předmět je povinný"),
   condition: z.string().trim().min(1, "Vyber stav"),
   photo: z.any().optional(),
@@ -185,6 +191,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
         <input
           id="title"
           type="text"
+          maxLength={MAX_TITLE_LENGTH}
           {...register("title")}
           className={styles.input}
         />

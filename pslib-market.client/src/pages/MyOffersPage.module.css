@@ -2,12 +2,14 @@
 	font-size: 16px;
 	width: min(1200px, 95vw);
 	margin: 0 auto;
+	padding: 16px;
+	box-sizing: border-box;
 }
 
 .list {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: 2rem;
+	gap: 1.5rem;
 	align-items: start;
 }
 
@@ -19,13 +21,39 @@
 	align-self: start;
 }
 
-.select {
-	min-width: 132px;
-	height: 34px;
-	border-radius: 8px;
-	border: 1px solid #c1cbd8;
-	padding: 0 0.5rem;
-	font-size: 16px;
+.cardAvailable {
+	border-color: #86efac;
+	background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 28%);
+}
+
+.cardReserved {
+	border-color: #fcd34d;
+	background: linear-gradient(180deg, #fffbeb 0%, #ffffff 28%);
+}
+
+.cardSold {
+	border-color: #fca5a5;
+	background: linear-gradient(180deg, #fef2f2 0%, #ffffff 28%);
+}
+
+.cardArchived {
+	border-color: #cbd5e1;
+	background: linear-gradient(180deg, #f8fafc 0%, #ffffff 28%);
+}
+
+.cardPending {
+	border-color: #93c5fd;
+	background: linear-gradient(180deg, #eff6ff 0%, #ffffff 28%);
+}
+
+.cardRejected {
+	border-color: #fca5a5;
+	background: linear-gradient(180deg, #fff1f2 0%, #ffffff 28%);
+}
+
+.cardUnknown {
+	border-color: #cbd5e1;
+	background: linear-gradient(180deg, #f8fafc 0%, #ffffff 28%);
 }
 
 .title {
@@ -33,6 +61,10 @@
 	font-weight: 700;
 	line-height: 1.25;
 	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	hyphens: auto;
 }
 
 .headerRow {
@@ -66,11 +98,11 @@
 }
 
 .metaRow {
-	display: grid;
-	grid-template-columns: minmax(90px, 140px) 1fr;
+	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 16px;
 	min-width: 0;
+	justify-content: flex-start;
 }
 
 .metaLabel {
@@ -82,6 +114,126 @@
 	align-items: center;
 	gap: 10px;
 	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.statusBadge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.32rem 0.78rem;
+	border-radius: 80px;
+	border: 1px solid transparent;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.statusAvailable {
+	background: #dcfce7;
+	border-color: #86efac;
+	color: #166534;
+}
+
+.statusReserved {
+	background: #fef3c7;
+	border-color: #fcd34d;
+	color: #92400e;
+}
+
+.statusSold {
+	background: #fee2e2;
+	border-color: #fca5a5;
+	color: #991b1b;
+}
+
+.statusArchived {
+	background: #e2e8f0;
+	border-color: #cbd5e1;
+	color: #334155;
+}
+
+.statusPending {
+	background: #dbeafe;
+	border-color: #93c5fd;
+	color: #1e40af;
+}
+
+.statusRejected {
+	background: #ffe4e6;
+	border-color: #fda4af;
+	color: #9f1239;
+}
+
+.statusUnknown {
+	background: #f1f5f9;
+	border-color: #cbd5e1;
+	color: #475569;
+}
+
+.moderationNotice {
+	padding: 0.62rem 0.72rem;
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.35;
+	font-weight: 500;
+}
+
+.moderationNoticePending {
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	color: #1e3a8a;
+}
+
+.moderationNoticeRejected {
+	background: #fff1f2;
+	border: 1px solid #fecdd3;
+	color: #9f1239;
+}
+
+.saleActions {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+	border-top: 1px solid #e2e8f0;
+	padding-top: 12px;
+}
+
+.saleButton {
+	height: 38px;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+}
+
+.saleButton:hover:not(:disabled) {
+	transform: translateY(-1px);
+	filter: brightness(0.98);
+}
+
+.saleButton:disabled {
+	cursor: default;
+	opacity: 0.85;
+}
+
+.buttonSold {
+	background: #fee2e2;
+	border-color: #fecaca;
+	color: #991b1b;
+}
+
+.buttonAvailable {
+	background: #dcfce7;
+	border-color: #86efac;
+	color: #166534;
+}
+
+.activeSaleButton {
+	box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1) inset;
 }
 
 .reservationDropdown {
@@ -172,14 +324,21 @@
 }
 
 @media (min-width: 780px) {
+	.page {
+		padding: 24px;
+	}
+
 	.list {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.5rem;
+		gap: 2rem;
 	}
 
 	.metaRow {
-		grid-template-columns: minmax(130px, 220px) 1fr;
-		gap: 10px;
+		gap: 16px;
+	}
+
+	.saleActions {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
