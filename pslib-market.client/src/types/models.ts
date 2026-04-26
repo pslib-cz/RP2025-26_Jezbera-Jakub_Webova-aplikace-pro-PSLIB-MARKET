@@ -8,6 +8,7 @@ export interface Book {
   title: string;
   description?: string;
   price: number;
+  createdAt?: string;
   ownerId: string;
   ownerName: string;
   ownerEmail: string;

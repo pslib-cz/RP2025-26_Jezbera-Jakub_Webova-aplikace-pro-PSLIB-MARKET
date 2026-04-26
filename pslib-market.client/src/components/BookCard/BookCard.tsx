@@ -3,6 +3,7 @@ import { useAuth } from "react-oidc-context";
 import { API_BASE_URL, reserveBook } from "../../services/apiService";
 import styles from "./BookCard.module.css";
 import Button from "../Button";
+import { getSubjectClass, getConditionClass, getConditionLabel } from "../../utils/constants";
 
 type BookCardProps = {
   id: number; 
@@ -13,49 +14,11 @@ type BookCardProps = {
   saleStatus?: number;
   condition?: number | string;
   tags?: string[];
+  isReservedByCurrentUser?: boolean;
+  isOwnedByCurrentUser?: boolean;
 };
 
 const RESERVED_STATUS = 1;
-
-const normalizeSubject = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
-
-const SUBJECT_CLASS_MAP: Record<string, string> = {
-  dejepis: styles.subjectHistory,
-  nemcina: styles.subjectGerman,
-  anglictina: styles.subjectEnglish,
-  matematika: styles.subjectMath,
-  fyzika: styles.subjectPhysics,
-  elektronika: styles.subjectElectronics,
-  informatika: styles.subjectElectronics,
-  technickekresleni: styles.subjectTechnicalDrawing,
-  cestina: styles.subjectCzech,
-  chemie: styles.subjectChemistry,
-
-};
-
-const CONDITION_CLASS_MAP: Record<number, string> = {
-  0: styles.conditionVeryGood,
-  1: styles.conditionGood,
-  2: styles.conditionWritten,
-  3: styles.conditionDamaged,
-};
-
-const getConditionLabel = (conditionValue?: number | string) => {
-  const numValue = typeof conditionValue === 'string' ? parseInt(conditionValue, 10) : conditionValue;
-  switch (numValue) {
-    case 0: return "Velmi dobrý";
-    case 1: return "Dobrý";
-    case 2: return "Popsaný";
-    case 3: return "Poškozený";
-    default: return "Neznámý stav"; 
-  }
-};
 
 const BookCard: React.FC<BookCardProps> = ({
   id,
@@ -66,6 +29,8 @@ const BookCard: React.FC<BookCardProps> = ({
   saleStatus,
   condition,
   tags,
+  isReservedByCurrentUser,
+  isOwnedByCurrentUser,
 }) => {
   const auth = useAuth();
   const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle");
@@ -95,23 +60,25 @@ const BookCard: React.FC<BookCardProps> = ({
     }
   };
 
-  const interestButtonText =
-    interestState === "sending"
-      ? "Posílám..."
-      : interestState === "sent"
-        ? isReserved
-          ? "Zařazeno"
-          : "Posláno"
-        : isReserved
-          ? "Zařadit do fronty"
-          : "Mám zájem";
+  let interestButtonText = "Mám zájem";
+  if (isOwnedByCurrentUser) {
+    interestButtonText = "Vlastní inzerát";
+  } else if (isReservedByCurrentUser) {
+    interestButtonText = "Vaše rezervace";
+  } else if (interestState === "sending") {
+    interestButtonText = "Posílám...";
+  } else if (interestState === "sent") {
+    interestButtonText = isReserved ? "Zařazeno" : "Posláno";
+  } else if (isReserved) {
+    interestButtonText = "Zařadit do fronty";
+  }
 
   const normalizedTags = (tags ?? []).filter(Boolean);
   const numCondition =
     typeof condition === "string" ? parseInt(condition, 10) : condition;
   const conditionClass =
     typeof numCondition === "number"
-      ? CONDITION_CLASS_MAP[numCondition] ?? ""
+      ? getConditionClass(numCondition, styles)
       : "";
 
   return (
@@ -129,8 +96,7 @@ const BookCard: React.FC<BookCardProps> = ({
           {normalizedTags.length > 0 && (
             <div className={styles.cardTags}>
               {normalizedTags.map((tag) => {
-                const subjectClass =
-                  SUBJECT_CLASS_MAP[normalizeSubject(tag)] ?? "";
+                const subjectClass = getSubjectClass(tag, styles);
 
                 return (
                   <span key={tag} className={`${styles.tagChip} ${subjectClass}`}>
@@ -173,7 +139,7 @@ const BookCard: React.FC<BookCardProps> = ({
               onClick={() => {
                 void handleInterestClick();
               }}
-              disabled={interestState === "sending" || interestState === "sent"}
+              disabled={isOwnedByCurrentUser || isReservedByCurrentUser || interestState === "sending" || interestState === "sent"}
             />
           </div>
         </div>

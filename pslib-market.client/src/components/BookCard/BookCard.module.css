@@ -274,7 +274,8 @@ p {
     }
 
     .cardFooter > :global(button) {
-        flex: 1;
+        flex-grow: 1;
+        flex-basis: 0%;
     }
     .cardTitle {
         font-size: 1.5rem; 

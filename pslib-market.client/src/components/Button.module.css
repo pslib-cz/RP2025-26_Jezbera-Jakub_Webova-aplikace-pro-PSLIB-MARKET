@@ -31,10 +31,9 @@
 }
 
 .icon svg {
-    width: 12px;
-    height: 12px;
+    width: var(--icon-size, 12px);
+    height: var(--icon-size, 12px);
 }
-
 
 .iconOnly {
     width: 2.25rem;

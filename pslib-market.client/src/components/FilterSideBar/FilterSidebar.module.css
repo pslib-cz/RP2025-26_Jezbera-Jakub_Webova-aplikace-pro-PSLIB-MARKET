@@ -1,0 +1,362 @@
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.sectionTitle {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--black);
+}
+
+.subTitle {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--black);
+}
+
+.sliderWrap {
+	position: relative;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	border-radius: 80px;
+}
+
+.sliderWrap::before {
+	content: '';
+	position: absolute;
+	left: 9px;
+	right: 9px;
+	height: 6px;
+	border-radius: 4px;
+	background: #d6d6d6;
+	z-index: 0;
+
+}
+
+.slider {
+	width: 100%;
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	margin: 0;
+	height: 24px;
+	background: transparent;
+	-webkit-appearance: none;
+	appearance: none;
+	pointer-events: none;
+}
+
+.sliderTop {
+	z-index: 3;
+}
+
+.slider::-webkit-slider-runnable-track {
+	height: 6px;
+	background: transparent;
+	border-radius: 4px;
+}
+
+.slider::-moz-range-track {
+	height: 6px;
+	background: transparent;
+	border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 2px solid var(--primary-blue);
+	background: var(--primary-blue);
+	margin-top: -6px;
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 2px solid var(--primary-blue);
+	background: var(--primary-blue);
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+.sliderActiveTrack {
+	position: absolute;
+	height: 6px;
+	border-radius: 4px;
+	background: var(--primary-blue);
+	z-index: 1;
+
+}
+
+.priceInputs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0;
+}
+
+.fieldLabel {
+	display: grid;
+	gap: 0.35rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+
+.fieldLabel:last-child {
+	justify-items: end;
+}
+
+.numberInput {
+	width: 100%;
+	border: 1px solid var(--background);
+	border-radius: 0.5rem;
+	padding: 0.45rem 0.5rem;
+	font: inherit;
+}
+
+.numberInput:focus-visible {
+	outline: 2px solid var(--primary-blue);
+	outline-offset: 1px;
+	border-color: transparent;
+}
+
+.chipList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	max-width: 100%;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	border: 1px solid transparent;
+	border-radius: 32px;
+	background: var(--white);
+	color: var(--black);
+	padding: 2px 10px;
+	font: inherit;
+	font-size: 12px;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.chipSelected {
+	box-shadow: 0 0 0 2px rgba(65, 84, 250, 0.18);
+}
+
+.chipClose {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 10px;
+	height: 10px;
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	line-height: 1;
+}
+.filtersWrap {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+.filterGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.subjectChip {
+	color: #ffffff;
+	border-color: transparent;
+}
+
+.subjectHistory {
+	background-color: #fb923c;
+}
+
+.subjectGerman {
+	background-color: #f87171;
+}
+
+.subjectElectronics {
+	background-color: #2dd4bf;
+}
+
+.subjectPhysics {
+	background-color: #38bdf8;
+}
+
+.subjectMath {
+	background-color: #4281ce;
+}
+
+.subjectTechnicalDrawing {
+	background-color: #818cf8;
+}
+
+.subjectCzech {
+	background-color: #fbbf24;
+}
+
+.subjectEnglish {
+	background-color: #a78bfa;
+}
+
+.subjectChemistry {
+	background-color: #b075eb;
+}
+
+.subjectFallback {
+	background-color: #64748b;
+}
+
+.conditionChip {
+	background-color: var(--white);
+	border-width: 2px;
+}
+
+.conditionChip.chipSelected {
+	color: var(--white);
+}
+
+.saleStatusChip {
+	border-width: 2px;
+	background: var(--white);
+}
+
+.saleStatusChip.chipSelected {
+	color: var(--white);
+}
+
+.saleStatusAvailable {
+	border-color: #28b883;
+	color: #166f50;
+}
+
+.saleStatusAvailable.chipSelected {
+	background: #28b883;
+}
+
+.saleStatusReserved {
+	border-color: #f59e0b;
+	color: #8a5a00;
+}
+
+.saleStatusReserved.chipSelected {
+	background: #f59e0b;
+}
+
+.saleStatusReservedByMe {
+	border-color: #4154fa;
+	color: #2637cd;
+}
+
+.saleStatusReservedByMe.chipSelected {
+	background: #4154fa;
+}
+
+.conditionVeryGood {
+	border-color: #a3e635;
+}
+
+.conditionVeryGood.chipSelected {
+	background: #a3e635;
+}
+
+.conditionGood {
+	border-color: #28b883;
+}
+
+.conditionGood.chipSelected {
+	background: #28b883;
+}
+
+.conditionWritten {
+	border-color: #ceaa1c;
+}
+
+.conditionWritten.chipSelected {
+	background: #ceaa1c;
+}
+
+.conditionDamaged {
+	border-color: #e85066;
+}
+
+.conditionDamaged.chipSelected {
+	background: #e85066;
+}
+
+.actionRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	border-top: 1px solid var(--background);
+}
+
+.counterWrap {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.25rem;
+}
+
+.resultCounter {
+	margin: 0;
+	font-weight: bold;
+}
+.resultCount {
+	font-weight: normal;
+	opacity: 0.5;
+}
+
+.clearButton {
+	color: var(--black);
+
+	border: none;
+	background: transparent;
+	padding: 0;
+	font-size: 14px;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+.clearButton:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+@media (min-width: 920px) {
+	.sidebar {
+		position: sticky;
+		top: 1rem;
+		align-self: start;
+		background: var(--white);
+		border: 1px solid var(--background);
+		border-radius: 1rem;
+		padding: 1rem;
+	}
+}

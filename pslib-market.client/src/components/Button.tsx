@@ -11,6 +11,7 @@ type ButtonProps = {
   iconOnly?: boolean;
   ariaLabel?: string;
   disabled?: boolean;
+  iconSize?: number ;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -23,10 +24,13 @@ const Button: React.FC<ButtonProps> = ({
   iconOnly = false,
   ariaLabel,
   disabled = false,
+  iconSize = 12,
 }) => {
   const variantClass = variant === 'primary' ? styles.primary : styles.secondary;
   const iconOnlyClass = iconOnly ? styles.iconOnly : '';
   const resolvedAriaLabel = iconOnly ? ariaLabel ?? text ?? 'Button' : ariaLabel;
+
+  const iconStyle = { '--icon-size': `${iconSize}px` } as React.CSSProperties;  
 
   return (
     <button
@@ -36,9 +40,9 @@ const Button: React.FC<ButtonProps> = ({
       aria-label={resolvedAriaLabel}
       disabled={disabled}
     >
-      {icon && iconPosition === 'left' && <span className={styles.icon} aria-hidden='true'>{icon}</span>}
-      {!iconOnly && text && <span className={styles.label}>{text}</span>}
-      {icon && iconPosition === 'right' && <span className={styles.icon} aria-hidden='true'>{icon}</span>}
+      {icon && iconPosition === 'left' && <span className={styles.icon} style={iconStyle} aria-hidden='true'>{icon}</span>}
+         {!iconOnly && text && <span className={styles.label}>{text}</span>}
+      {icon && iconPosition === 'right' && <span className={styles.icon} style={iconStyle} aria-hidden='true'>{icon}</span>}
     </button>
   )
 }

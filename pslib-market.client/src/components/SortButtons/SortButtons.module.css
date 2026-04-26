@@ -1,0 +1,30 @@
+.sortButton{
+    appearance: none;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--white);
+    border: 1px solid transparent;
+    border-top: 3px solid transparent;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, border-top-color 120ms ease;
+}
+
+
+
+.sortButtonActive {
+    border-top-color: var(--primary-blue);
+}
+
+.sortButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
