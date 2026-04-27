@@ -11,4 +11,5 @@ Cílem projektu je vytvořit centralizované místo, kde mohou studenti snadno n
 
 ## 🎨 Design
 👉 **[Odkaz na návrh ve Figmě](https://www.figma.com/design/yC5gdp52xHrkmRIEiYVZLr/PslibMarket---RP?node-id=29-129&t=bgTLP8vjrkeVst0z-1)**
+👉 **[Odkaz na živý web](https://market.pslib.cloud/)**
 
