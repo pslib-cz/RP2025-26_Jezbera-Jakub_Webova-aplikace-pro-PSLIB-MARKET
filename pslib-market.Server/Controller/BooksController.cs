@@ -77,6 +77,87 @@ namespace pslib_market.Server.Controller
             return recipients;
         }
 
+        private string? GetCurrentUserId()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+        }
+
+        private string? GetCurrentUserEmail()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+        }
+
+        private string? GetCurrentUserName()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "upn")?.Value
+                ?? User.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
+        }
+
+        private static string ResolveUserName(string? userName, string? userEmail, string fallback = "Neznámý uživatel")
+        {
+            var resolvedName = userName;
+
+            if (string.IsNullOrWhiteSpace(resolvedName) && !string.IsNullOrWhiteSpace(userEmail))
+            {
+                resolvedName = userEmail.Split('@')[0];
+            }
+
+            if (string.IsNullOrWhiteSpace(resolvedName))
+            {
+                return fallback;
+            }
+
+            return resolvedName;
+        }
+
+        private void AddBookActivityLog(int bookId, string action, string details, string? userName = null, string? userEmail = null)
+        {
+            var actorName = userName ?? GetCurrentUserName();
+            var actorEmail = userEmail ?? GetCurrentUserEmail();
+
+            _context.BookActivityLogs.Add(new BookActivityLog
+            {
+                BookId = bookId,
+                UserId = ResolveUserName(actorName, actorEmail),
+                Action = action,
+                Details = details,
+                TimeStamp = DateTime.UtcNow
+            });
+        }
+
+        private async Task ArchiveExpiredReservedBooksAsync(DateTime now)
+        {
+            var oneMonthAgo = now.AddMonths(-1);
+
+            var booksToArchive = await _context.Books
+                .Where(b => b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt < oneMonthAgo)
+                .ToListAsync();
+
+            if (booksToArchive.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var book in booksToArchive)
+            {
+                book.SaleStatus = SaleStatus.Archived;
+                book.LastUpdatedAt = now;
+
+                AddBookActivityLog(
+                    book.Id,
+                    "AutoArchive",
+                    "Inzerát byl automaticky archivován systémem po více než měsíci ve stavu rezervace.",
+                    userName: "Systém");
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         private string GetAppBaseUrl()
         {
             var configuredUrl = _configuration["Email:AppUrl"];
@@ -115,8 +196,8 @@ namespace pslib_market.Server.Controller
         public async Task<ActionResult<IEnumerable<BookDto>>> GetBooks()
         {
             var now = DateTime.UtcNow;
+            await ArchiveExpiredReservedBooksAsync(now);
             var oneMonthAgo = now.AddMonths(-1);
-            var twoYearsAgo = now.AddYears(-2);
 
             var books = await _context.Books
                 .Include(b => b.Tags)
@@ -148,19 +229,13 @@ namespace pslib_market.Server.Controller
         public async Task<ActionResult<Book>> CreateBook([FromForm] CreateBookDTO dto)
         {
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-             ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var userId = GetCurrentUserId();
 
-            var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-                            ?? User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var userEmail = GetCurrentUserEmail();
 
-            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-                           ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+            var userName = GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(userEmail))
-            {
-                userName = userEmail.Split('@')[0];
-            }
+            userName = ResolveUserName(userName, userEmail, fallback: string.Empty);
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userName))
             {
@@ -214,6 +289,15 @@ namespace pslib_market.Server.Controller
             }
 
             _context.Books.Add(book);
+            await _context.SaveChangesAsync();
+
+            AddBookActivityLog(
+                book.Id,
+                "Create",
+                $"Uživatel vytvořil inzerát '{book.Title}', který čeká na schválení.",
+                userName,
+                userEmail);
+
             await _context.SaveChangesAsync();
 
             try
@@ -280,13 +364,30 @@ namespace pslib_market.Server.Controller
                 return NotFound("Inzerát nebyl nalezen.");
             }
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-                ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var userId = GetCurrentUserId();
+            var userName = GetCurrentUserName();
+            var userEmail = GetCurrentUserEmail();
 
             if (book.OwnerId != userId) return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
 
+            var previousStatus = book.SaleStatus;
             book.SaleStatus = newStatus;
             book.LastUpdatedAt = DateTime.UtcNow;
+
+            if (previousStatus != newStatus)
+            {
+                var details = newStatus == SaleStatus.Archived
+                    ? "Majitel inzerátu ho ručně archivoval."
+                    : $"Majitel inzerátu změnil stav z {previousStatus} na {newStatus}.";
+
+                AddBookActivityLog(
+                    book.Id,
+                    "ChangeStatus",
+                    details,
+                    userName,
+                    userEmail);
+            }
+
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -312,17 +413,11 @@ namespace pslib_market.Server.Controller
         [Authorize]
         public async Task<IActionResult> ReserveBook(int id)
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-             ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-                            ?? User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-                            ?? User.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+            var userId = GetCurrentUserId();
+            var userEmail = GetCurrentUserEmail();
+            var userName = GetCurrentUserName();
 
-            if (string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(userEmail))
-            {
-                userName = userEmail.Split('@')[0];
-            }
+            userName = ResolveUserName(userName, userEmail, fallback: string.Empty);
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -360,6 +455,16 @@ namespace pslib_market.Server.Controller
             {
                 book.SaleStatus = SaleStatus.Reserved;
             }
+
+            book.LastUpdatedAt = DateTime.UtcNow;
+
+            AddBookActivityLog(
+                book.Id,
+                "Reserve",
+                $"Inzerát rezervoval uživatel {userName} ({userEmail}).",
+                userName,
+                userEmail);
+
             await _context.SaveChangesAsync();
 
             try
@@ -389,8 +494,10 @@ namespace pslib_market.Server.Controller
             {
                 return NotFound("Inzerát nebyl nalezen.");
             }
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-             ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var userId = GetCurrentUserId();
+
+            var userName = GetCurrentUserName();
+            var userEmail = GetCurrentUserEmail();
 
             bool isAdmin = HasAdminAccess(User);
 
@@ -464,6 +571,26 @@ namespace pslib_market.Server.Controller
                 imageBytes = ms.ToArray();
                 book.ImageBlob = imageBytes;
             }
+
+            if (hasModeratedChanges)
+            {
+                AddBookActivityLog(
+                    book.Id,
+                    "UpdateNeedsApproval",
+                    "Uživatel upravil inzerát (název/popis/fotku), proto byl vrácen do stavu čekající na schválení.",
+                    userName,
+                    userEmail);
+            }
+            else
+            {
+                AddBookActivityLog(
+                    book.Id,
+                    "Update",
+                    "Uživatel upravil inzerát bez změn vyžadujících nové schválení.",
+                    userName,
+                    userEmail);
+            }
+
             await _context.SaveChangesAsync();
             return NoContent();
         }
@@ -473,8 +600,9 @@ namespace pslib_market.Server.Controller
         [Authorize]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetMyBooks()
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-                ?? User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            await ArchiveExpiredReservedBooksAsync(DateTime.UtcNow);
+
+            var userId = GetCurrentUserId();
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -520,7 +648,8 @@ namespace pslib_market.Server.Controller
         public async Task<IActionResult> ApproveBook(int id)
         {
             var book = await _context.Books.FindAsync(id);
-            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var adminName = GetCurrentUserName();
+            var adminEmail = GetCurrentUserEmail();
 
             if (book == null) return NotFound("Inzerát nebyl nalezen.");
             if (book.SaleStatus != SaleStatus.Pending) return BadRequest("Inzerát není ve stavu čekající na schválení.");
@@ -528,14 +657,12 @@ namespace pslib_market.Server.Controller
             book.SaleStatus = SaleStatus.Available;
             book.LastUpdatedAt = DateTime.UtcNow;
 
-            _context.BookActivityLogs.Add(new BookActivityLog
-            {
-                BookId = id,
-                UserId = adminId,
-                Action = "Approve",
-                Details = "Inzerát schválen administrátorem.",
-                TimeStamp = DateTime.UtcNow
-            });
+            AddBookActivityLog(
+                id,
+                "Approve",
+                "Inzerát schválen administrátorem.",
+                adminName,
+                adminEmail);
 
             await _context.SaveChangesAsync();
 
@@ -561,18 +688,18 @@ namespace pslib_market.Server.Controller
             if (book == null) return NotFound("Inzerát nebyl nalezen.");
             if (book.SaleStatus != SaleStatus.Pending) return BadRequest("Inzerát není ve stavu čekající na schválení.");
 
-            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var adminName = GetCurrentUserName();
+            var adminEmail = GetCurrentUserEmail();
 
             book.SaleStatus = SaleStatus.Rejected;
             book.LastUpdatedAt = DateTime.UtcNow;
-            _context.BookActivityLogs.Add(new BookActivityLog
-            {
-                BookId = id,
-                UserId = adminId,
-                Action = "Reject",
-                Details = "Inzerát zamítnut administrátorem.",
-                TimeStamp = DateTime.UtcNow
-            });
+
+            AddBookActivityLog(
+                id,
+                "Reject",
+                "Inzerát zamítnut administrátorem.",
+                adminName,
+                adminEmail);
             await _context.SaveChangesAsync();
 
             try

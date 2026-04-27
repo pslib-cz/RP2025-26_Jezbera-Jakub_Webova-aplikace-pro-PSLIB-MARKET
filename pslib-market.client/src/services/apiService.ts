@@ -1,4 +1,4 @@
-import type { Book } from '../types/models';
+import type { Book, BookActivityLog } from '../types/models';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(configuredApiBaseUrl ?? '');
@@ -129,4 +129,17 @@ export const reserveBook = async (bookId: number, token: string): Promise<void> 
     const errorMessage = await response.text();
     throw new Error(errorMessage || 'Nepodařilo se odeslat zájem o knihu.');
   }
+};
+
+export const getAuditLogs = async (token: string): Promise<BookActivityLog[]> => {
+  const response = await fetch(`${API_BASE_URL}/auditlog`, {
+    headers: createAuthHeaders(token),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se načíst audit log.');
+  }
+
+  return await response.json();
 };

@@ -24,3 +24,16 @@ export interface BookReservation {
   reservedByUserEmail?: string;
   reservedAt?: string;
 }
+
+export interface BookActivityLog {
+  id: number;
+  bookId: number;
+  userId: string;
+  action: string;
+  details?: string;
+  timeStamp: string;
+  book?: {
+    id: number;
+    title: string;
+  };
+}

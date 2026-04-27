@@ -52,6 +52,7 @@
 	left: 0;
 	top: 50%;
 	transform: translateY(-50%);
+	z-index: 2;
 	margin: 0;
 	height: 24px;
 	background: transparent;
@@ -101,10 +102,13 @@
 
 .sliderActiveTrack {
 	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 	height: 6px;
 	border-radius: 4px;
 	background: var(--primary-blue);
 	z-index: 1;
+	pointer-events: none;
 
 }
 
@@ -127,6 +131,8 @@
 
 .numberInput {
 	width: 100%;
+	max-width: 120px;
+	box-sizing: border-box;
 	border: 1px solid var(--background);
 	border-radius: 0.5rem;
 	padding: 0.45rem 0.5rem;

@@ -15,7 +15,7 @@ const CONDITIONS = [
   { value: 3, label: "Poškozený" },
 ] as const;
 
-const MAX_TITLE_LENGTH = 120;
+const MAX_TITLE_LENGTH = 50;
 
 const adSchema = z.object({ 
   title: z

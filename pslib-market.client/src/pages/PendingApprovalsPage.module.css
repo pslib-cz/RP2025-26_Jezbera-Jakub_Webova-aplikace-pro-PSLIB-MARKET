@@ -37,14 +37,21 @@
   gap: 0.5rem;
   align-content: start;
   grid-auto-rows: min-content;
+  min-width: 0;
 }
 
 .bookTitle {
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .meta {
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .actions {
