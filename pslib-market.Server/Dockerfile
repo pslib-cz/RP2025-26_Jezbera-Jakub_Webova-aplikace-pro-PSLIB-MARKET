@@ -19,8 +19,7 @@ RUN apt-get update && \
 
 COPY ["pslib-market.Server/pslib-market.Server.csproj", "pslib-market.Server/"]
 COPY ["pslib-market.client/pslib-market.client.esproj", "pslib-market.client/"]
-COPY ["pslib-market.client/package.json", "pslib-market.client/"]
-COPY ["pslib-market.client/package-lock.json", "pslib-market.client/"]
+COPY . .
 
 # Build the client first
 WORKDIR "/src/pslib-market.client"
@@ -29,7 +28,6 @@ RUN npm run build
 
 WORKDIR "/src"
 RUN dotnet restore "./pslib-market.Server/pslib-market.Server.csproj"
-COPY . .
 WORKDIR "/src/pslib-market.Server"
 RUN dotnet build "./pslib-market.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
