@@ -78,8 +78,12 @@ const AdForm = ({ initialData }: AdFormProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [flashType, setFlashType] = useState<FlashMessageType>("error");
+  const [rateLimitSecondsRemaining, setRateLimitSecondsRemaining] = useState(0);
   const auth = useAuth();
   const navigate = useNavigate();
+
+  const RATE_LIMIT_MS = 30000; 
+  const RATE_LIMIT_KEY = `lastBookSubmission_${auth.user?.profile?.sub}`;
 
   const {
     register,
@@ -101,14 +105,19 @@ const AdForm = ({ initialData }: AdFormProps) => {
   });
 
   const photoRegister = register("photo");
+  const isRateLimited = !isEditMode && rateLimitSecondsRemaining > 0;
   const submitLabel = isSubmitting
     ? "Odesílám..."
-    : isEditMode
-      ? "Uložit změny"
-      : "Publikovat inzerát";
+    : isRateLimited
+      ? `Čekej ${rateLimitSecondsRemaining}s`
+      : isEditMode
+        ? "Uložit změny"
+        : "Publikovat inzerát";
   const submitHint = isSubmitting
     ? "Odesílání může trvat několik sekund. Formulář nechávejte otevřený."
-    : null;
+    : isRateLimited
+      ? `Příliš časté přidávání. Zkuste to znovu za ${rateLimitSecondsRemaining} sekund.`
+      : null;
 
    useEffect(() => {
     const loadTags = async () => {
@@ -122,6 +131,30 @@ const AdForm = ({ initialData }: AdFormProps) => {
     loadTags();
   }, []);
 
+  useEffect(() => {
+    if (isEditMode) return; 
+
+    const checkRateLimit = () => {
+      const lastSubmission = localStorage.getItem(RATE_LIMIT_KEY);
+      if (lastSubmission) {
+        const lastTime = parseInt(lastSubmission, 10);
+        const elapsed = Date.now() - lastTime;
+        const remaining = Math.ceil((RATE_LIMIT_MS - elapsed) / 1000);
+        
+        if (remaining > 0) {
+          setRateLimitSecondsRemaining(remaining);
+        } else {
+          setRateLimitSecondsRemaining(0);
+        }
+      }
+    };
+
+    checkRateLimit();
+    const interval = setInterval(checkRateLimit, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isEditMode, RATE_LIMIT_KEY]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setFileName(e.target.files[0].name);
@@ -131,6 +164,20 @@ const AdForm = ({ initialData }: AdFormProps) => {
   };
 
   const onSubmit = async (data: AdFormValues) => {
+    if (!isEditMode) {
+      const lastSubmission = localStorage.getItem(RATE_LIMIT_KEY);
+      if (lastSubmission) {
+        const lastTime = parseInt(lastSubmission, 10);
+        const elapsed = Date.now() - lastTime;
+        if (elapsed < RATE_LIMIT_MS) {
+          const secondsRemaining = Math.ceil((RATE_LIMIT_MS - elapsed) / 1000);
+          setFlashType("error");
+          setFlashMessage(`Příliš časté přidávání. Zkuste to znovu za ${secondsRemaining} sekund.`);
+          return;
+        }
+      }
+    }
+
     const selectedPhoto = data.photo?.[0];
 
     if (selectedPhoto && !isSupportedImageFile(selectedPhoto)) {
@@ -185,6 +232,12 @@ const AdForm = ({ initialData }: AdFormProps) => {
         setFlashType("error");
         setFlashMessage("Chyba při ukládání inzerátu.");
         return;
+      }
+
+      if (!isEditMode) {
+        // eslint-disable-next-line react-hooks/rules-of-hooks, no-restricted-globals
+        const submissionTime = Date.now();
+        localStorage.setItem(RATE_LIMIT_KEY, submissionTime.toString());
       }
 
       navigate(isEditMode ? "/moje-inzeraty" : "/", {
@@ -379,7 +432,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
       </div>
 
       <div className={styles.submitButtonWrap}>
-        <button className={styles.publishButton} type="submit" disabled={isSubmitting} aria-disabled={isSubmitting}>
+        <button className={styles.publishButton} type="submit" disabled={isSubmitting || isRateLimited} aria-disabled={isSubmitting || isRateLimited}>
           {submitLabel}
         </button>
         {submitHint && (
