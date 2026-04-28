@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import type { Tag } from '../types/models'
 import AdForm from '../components/AdForm/AdForm'
 import styles from './CreateOfferPage.module.css'
 
@@ -7,7 +8,7 @@ type CreateOfferLocationState = {
   book?: {
     id: number
     title?: string
-    tags?: string[]
+    tags?: Tag[]
     condition?: number | string
     price?: number | string
     description?: string
