@@ -10,8 +10,11 @@ export default function AdminNav() {
       <NavLink className={getClassName} to="/admin/schvalovani">
         Schvalování
       </NavLink>
-      <NavLink className={getClassName} to="/audit-log">
+      <NavLink className={getClassName} to="/admin/audit-log">
         Audit log
+      </NavLink>
+      <NavLink className={getClassName} to="/admin/tagy">
+        Správa tagů
       </NavLink>
     </nav>
   );

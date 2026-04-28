@@ -2,21 +2,20 @@ import { useMemo } from 'react'
 import styles from './FilterSidebar.module.css'
 
 import FilterAction from "./FilterAction"
-import Filters from "./Filters"
+import Filters, { type TagData } from "./Filters" 
 import Price from "./Price"
 import { type SaleStatusFilter, type SidebarFilters, createEmptyFilters } from '../../utils/constants'
 
 type FilterSidebarProps = {
   minAvailablePrice: number
   maxAvailablePrice: number
-  subjectOptions: string[]
+  subjectOptions: TagData[] 
   visibleCount: number
   totalCount: number
   appliedFilters: SidebarFilters
   onApplyFilters: (filters: SidebarFilters) => void
   onCloseMobile?: () => void
 }
-
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
   minAvailablePrice,
@@ -28,13 +27,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onApplyFilters,
   onCloseMobile,
 }) => {
-  const toggleSubject = (subject: string) => {
-    const hasSubject = appliedFilters.subjects.includes(subject)
+  const toggleSubject = (subjectName: string) => { 
+    const hasSubject = appliedFilters.subjects.includes(subjectName)
     onApplyFilters({
       ...appliedFilters,
       subjects: hasSubject
-        ? appliedFilters.subjects.filter((item) => item !== subject)
-        : [...appliedFilters.subjects, subject],
+        ? appliedFilters.subjects.filter((item) => item !== subjectName)
+        : [...appliedFilters.subjects, subjectName],
     })
   }
 

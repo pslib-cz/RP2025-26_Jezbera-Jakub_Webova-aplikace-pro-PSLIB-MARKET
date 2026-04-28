@@ -3,17 +3,17 @@ import { useAuth } from "react-oidc-context";
 import { API_BASE_URL, reserveBook } from "../../services/apiService";
 import styles from "./BookCard.module.css";
 import Button from "../Button";
-import { getSubjectClass, getConditionClass, getConditionLabel } from "../../utils/constants";
+import {  getConditionClass, getConditionLabel } from "../../utils/constants";
 
 type BookCardProps = {
-  id: number; 
+  id: number;
   title: string;
   description?: string;
   price: number;
   ownerName: string;
   saleStatus?: number;
   condition?: number | string;
-  tags?: string[];
+  tags?: { name: string; bgColor: string; textColor: string }[];
   isReservedByCurrentUser?: boolean;
   isOwnedByCurrentUser?: boolean;
 };
@@ -95,15 +95,15 @@ const BookCard: React.FC<BookCardProps> = ({
         <div className={styles.badgesOverlay}>
           {normalizedTags.length > 0 && (
             <div className={styles.cardTags}>
-              {normalizedTags.map((tag) => {
-                const subjectClass = getSubjectClass(tag, styles);
-
-                return (
-                  <span key={tag} className={`${styles.tagChip} ${subjectClass}`}>
-                    {tag}
-                  </span>
-                );
-              })}
+              {normalizedTags.map((tag) => (
+                <span
+                  key={tag.name}
+                  className={styles.tagChip}
+                  style={{ backgroundColor: tag.bgColor, color: tag.textColor }}
+                >
+                  {tag.name}
+                </span>
+              ))}
             </div>
           )}
 
@@ -115,24 +115,23 @@ const BookCard: React.FC<BookCardProps> = ({
 
       <div className={styles.cardContent}>
         <div className={styles.cardWrap}>
-        <p className={styles.cardTitle}> {title}</p>
-        
-        {description && (
-          <p className={styles.cardDescription}>{description}</p>
-        )}
-        <p className={styles.cardOwner}> {ownerName}</p>
+          <p className={styles.cardTitle}> {title}</p>
+
+          {description && (
+            <p className={styles.cardDescription}>{description}</p>
+          )}
+          <p className={styles.cardOwner}> {ownerName}</p>
         </div>
-        
+
         <div className={styles.cardFooter}>
           <p className={styles.cardPrice}>{price},-</p>
           <div
-            className={`${styles.interestButtonWrap} ${
-              interestState === "sending"
+            className={`${styles.interestButtonWrap} ${interestState === "sending"
                 ? styles.interestButtonSending
                 : interestState === "sent"
                   ? styles.interestButtonSent
                   : ""
-            }`}
+              }`}
           >
             <Button
               text={interestButtonText}

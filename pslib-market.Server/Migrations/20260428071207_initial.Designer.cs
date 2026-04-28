@@ -12,8 +12,8 @@ using pslib_market.Server.Data;
 namespace pslib_market.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260414062526_addownerinfo")]
-    partial class addownerinfo
+    [Migration("20260428071207_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,23 +38,6 @@ namespace pslib_market.Server.Migrations
                     b.HasIndex("TagsId");
 
                     b.ToTable("BookTag");
-
-                    b.HasData(
-                        new
-                        {
-                            BooksId = 1,
-                            TagsId = 1
-                        },
-                        new
-                        {
-                            BooksId = 2,
-                            TagsId = 2
-                        },
-                        new
-                        {
-                            BooksId = 3,
-                            TagsId = 3
-                        });
                 });
 
             modelBuilder.Entity("pslib_market.Server.Models.Book", b =>
@@ -65,14 +48,22 @@ namespace pslib_market.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("Condition")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<int?>("ImageId")
-                        .HasColumnType("integer");
+                    b.Property<byte[]>("ImageBlob")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ImageContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -92,9 +83,6 @@ namespace pslib_market.Server.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("ReservedById")
-                        .HasColumnType("text");
-
                     b.Property<int>("SaleStatus")
                         .HasColumnType("integer");
 
@@ -105,50 +93,10 @@ namespace pslib_market.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ImageId");
-
                     b.ToTable("Books");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            LastUpdatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            OwnerEmail = "",
-                            OwnerId = "user1",
-                            OwnerName = "",
-                            Price = 299m,
-                            SaleStatus = 0,
-                            Title = "Dějepis pro střední školy"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            LastUpdatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            OwnerEmail = "",
-                            OwnerId = "user2",
-                            OwnerName = "",
-                            Price = 199m,
-                            SaleStatus = 1,
-                            Title = "Němčina pro střední školy"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            LastUpdatedAt = new DateTime(2026, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            OwnerEmail = "",
-                            OwnerId = "user3",
-                            OwnerName = "",
-                            Price = 399m,
-                            SaleStatus = 2,
-                            Title = "Elektrotechnika pro střední školy"
-                        });
                 });
 
-            modelBuilder.Entity("pslib_market.Server.Models.Image", b =>
+            modelBuilder.Entity("pslib_market.Server.Models.BookActivityLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -156,24 +104,61 @@ namespace pslib_market.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<byte[]>("Blob")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("ContentType")
+                    b.Property<string>("Action")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("OriginalName")
-                        .IsRequired()
+                    b.Property<int>("BookId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Details")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UploadedAt")
+                    b.Property<DateTime>("TimeStamp")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Images");
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookActivityLogs");
+                });
+
+            modelBuilder.Entity("pslib_market.Server.Models.BookReservation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReservedByUserEmail")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReservedByUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReservedByUserName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookReservations");
                 });
 
             modelBuilder.Entity("pslib_market.Server.Models.Tag", b =>
@@ -184,10 +169,18 @@ namespace pslib_market.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BgColor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TextColor")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -197,47 +190,65 @@ namespace pslib_market.Server.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Dějepis"
+                            BgColor = "#FB923C",
+                            Name = "Dějepis",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Němčina"
+                            BgColor = "#F87171",
+                            Name = "Němčina",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Elektrotechnika"
+                            BgColor = "#2DD4BF",
+                            Name = "Elektrotechnika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Fyzika"
+                            BgColor = "#38BDF8",
+                            Name = "Fyzika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 5,
-                            Name = "Matematika"
+                            BgColor = "#4281CE",
+                            Name = "Matematika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 6,
-                            Name = "Technické kreslení"
+                            BgColor = "#818CF8",
+                            Name = "Technické kreslení",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 7,
-                            Name = "Čeština"
+                            BgColor = "#FBBF24",
+                            Name = "Čeština",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 8,
-                            Name = "Angličtina"
+                            BgColor = "#A78BFA",
+                            Name = "Angličtina",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 9,
-                            Name = "Chemie"
+                            BgColor = "#B075EB",
+                            Name = "Chemie",
+                            TextColor = "#FFFFFF"
                         });
                 });
 
@@ -256,13 +267,29 @@ namespace pslib_market.Server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("pslib_market.Server.Models.BookActivityLog", b =>
+                {
+                    b.HasOne("pslib_market.Server.Models.Book", "Book")
+                        .WithMany()
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("pslib_market.Server.Models.BookReservation", b =>
+                {
+                    b.HasOne("pslib_market.Server.Models.Book", null)
+                        .WithMany("Reservations")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("pslib_market.Server.Models.Book", b =>
                 {
-                    b.HasOne("pslib_market.Server.Models.Image", "Image")
-                        .WithMany()
-                        .HasForeignKey("ImageId");
-
-                    b.Navigation("Image");
+                    b.Navigation("Reservations");
                 });
 #pragma warning restore 612, 618
         }

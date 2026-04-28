@@ -1,4 +1,4 @@
-import type { Book, BookActivityLog } from '../types/models';
+import type { Book, BookActivityLog, Tag } from '../types/models';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(configuredApiBaseUrl ?? '');
@@ -28,15 +28,6 @@ export const getBooks = async (token?: string): Promise<Book[]> => {
   return await response.json();
 };
 
-export const getTags = async (): Promise<string[]> => {
-  const response = await fetch(`${API_BASE_URL}/tags`);
-
-  if (!response.ok) {
-    throw new Error('Nepodařilo se stáhnout předměty z backendu.');
-  }
-
-  return await response.json();
-};
 
 
 export const getMyBooks = async (token: string): Promise<Book[]> => {
@@ -67,21 +58,6 @@ export const changeBookSaleStatus = async (bookId: number, newStatus: number, to
 };
 
 
-export const createTag = async (tagName: string, token: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/tags`, {
-    method: 'POST',
-    headers: {
-      ...createAuthHeaders(token),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(tagName),
-  });
-
-  if (!response.ok) {
-    const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se vytvořit nový předmět.');
-  }
-};
 
 export const approveBook = async (bookId: number, token: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/approve`, {
@@ -142,4 +118,35 @@ export const getAuditLogs = async (token: string): Promise<BookActivityLog[]> =>
   }
 
   return await response.json();
+};
+
+
+
+export const getTags = async (): Promise<Tag[]> => {
+  const response = await fetch(`${API_BASE_URL}/tags`);
+
+  if (!response.ok) {
+    throw new Error('Nepodařilo se stáhnout předměty z backendu.');
+  }
+
+  return await response.json();
+};
+
+export const createTag = async (
+  tagData: { name: string; bgColor: string; textColor: string }, 
+  token: string
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/tags`, {
+    method: 'POST',
+    headers: {
+      ...createAuthHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(tagData),
+  });
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || 'Nepodařilo se vytvořit nový předmět.');
+  }
 };

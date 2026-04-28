@@ -165,7 +165,7 @@ export default function PendingApprovalsPage() {
                   <p className={styles.meta}>Autor inzerátu: {book.ownerName}</p>
                   <p className={styles.meta}>Email: {book.ownerEmail}</p>
                   <p className={styles.meta}>Cena: {book.price} Kč</p>
-                  <p className={styles.meta}>Předmět: {(book.tags ?? []).join(", ") || "Neuvedeno"}</p>
+               <p className={styles.meta}>Předmět: {(book.tags ?? []).map(t => t.name).join(", ") || "Neuvedeno"}</p>
                   <p className={styles.meta}>Popis: {book.description?.trim() || "Bez popisu"}</p>
 
                   <div className={styles.actions}>

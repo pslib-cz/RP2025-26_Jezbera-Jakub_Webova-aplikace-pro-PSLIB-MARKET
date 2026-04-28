@@ -1,23 +1,46 @@
 .nav {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  padding: 0.25rem;
-  border-radius: 0.75rem;
+  width: 100%;
+  padding: 0.35rem;
+  box-sizing: border-box;
+  border-radius: 0.9rem;
   background: #eef3ff;
   margin-bottom: 1rem;
 }
 
 .link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   text-decoration: none;
   font-size: 0.95rem;
   line-height: 1;
-  padding: 0.55em 0.9em;
-  border-radius: 0.55rem;
+  padding: 0.7em 0.9em;
+  border-radius: 0.65rem;
   color: #1f2a44;
   font-weight: 600;
+  box-sizing: border-box;
 }
 
 .active {
   background: var(--primary-blue);
   color: var(--white);
+}
+
+@media (min-width: 42rem) {
+  .nav {
+    flex-direction: row;
+    max-width: 42rem;
+  }
+
+  .link {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

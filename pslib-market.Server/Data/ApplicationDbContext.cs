@@ -21,18 +21,18 @@ namespace pslib_market.Server.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Tag>().HasData(
-                new Tag { Id = 1, Name = "Dějepis" },
-                new Tag { Id = 2, Name = "Němčina" },
-                new Tag { Id = 3, Name = "Elektrotechnika" },
-                new Tag { Id = 4, Name = "Fyzika" },
-                new Tag { Id = 5, Name = "Matematika" },
-                new Tag { Id = 6, Name = "Technické kreslení" },
-                new Tag { Id = 7, Name = "Čeština" },
-                new Tag { Id = 8, Name = "Angličtina" },
-                new Tag { Id = 9, Name = "Chemie" }
+                new Tag { Id = 1, Name = "Dějepis", BgColor = "#FB923C", TextColor = "#FFFFFF" },
+                new Tag { Id = 2, Name = "Němčina", BgColor = "#F87171", TextColor = "#FFFFFF" },
+                new Tag { Id = 3, Name = "Elektrotechnika", BgColor = "#2DD4BF", TextColor = "#FFFFFF" },
+                new Tag { Id = 4, Name = "Fyzika", BgColor = "#38BDF8", TextColor = "#FFFFFF" },
+                new Tag { Id = 5, Name = "Matematika", BgColor = "#4281CE", TextColor = "#FFFFFF" },
+                new Tag { Id = 6, Name = "Technické kreslení", BgColor = "#818CF8", TextColor = "#FFFFFF" },
+                new Tag { Id = 7, Name = "Čeština", BgColor = "#FBBF24", TextColor = "#FFFFFF" },
+                new Tag { Id = 8, Name = "Angličtina", BgColor = "#A78BFA", TextColor = "#FFFFFF" },
+                new Tag { Id = 9, Name = "Chemie", BgColor = "#B075EB", TextColor = "#FFFFFF" }
             );
 
-           
+
         }
     }
 }

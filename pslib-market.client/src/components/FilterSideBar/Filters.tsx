@@ -2,16 +2,21 @@ import React from 'react'
 import styles from './FilterSidebar.module.css'
 import {
   type SaleStatusFilter,
-  getSubjectClass,
   getConditionClass,
   getSaleStatusClass,
   conditionOptions,
   saleStatusOptions,
 } from '../../utils/constants'
 
+export type TagData = {
+  name: string;
+  bgColor: string;
+  textColor: string;
+}
+
 type FiltersProps = {
-  subjectOptions: string[]
-  selectedSubjects: string[]
+  subjectOptions: TagData[] 
+  selectedSubjects: string[] 
   onToggleSubject: (subject: string) => void
   selectedConditions: number[]
   onToggleCondition: (condition: number) => void
@@ -21,8 +26,8 @@ type FiltersProps = {
 
 const CloseIcon = () => (
   <svg width='6' height='6' viewBox='0 0 6 6' fill='none' xmlns='http://www.w3.org/2000/svg'>
-    <path d='M5.5 0.5L0.5 5.5' stroke='white' strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M0.5 0.5L5.5 5.5' stroke='white' strokeLinecap='round' strokeLinejoin='round' />
+    <path d='M5.5 0.5L0.5 5.5' stroke='currentColor' strokeLinecap='round' strokeLinejoin='round' />
+    <path d='M0.5 0.5L5.5 5.5' stroke='currentColor' strokeLinecap='round' strokeLinejoin='round' />
   </svg>
 )
 
@@ -44,24 +49,27 @@ const Filters: React.FC<FiltersProps> = ({
           <p className={styles.subTitle}>Dle předmětu</p>
           <div className={styles.chipList}>
             {subjectOptions.map((subject) => {
-              const isSelected = selectedSubjects.includes(subject)
-              const subjectClass = getSubjectClass(subject, styles)
+              const isSelected = selectedSubjects.includes(subject.name)
 
               return (
                 <button
-                  key={subject}
+                  key={subject.name}
                   type='button'
-                  className={`${styles.chip} ${styles.subjectChip} ${subjectClass} ${isSelected ? styles.chipSelected : ''}`.trim()}
-                  onClick={() => onToggleSubject(subject)}
+                  className={`${styles.chip} ${styles.subjectChip} ${isSelected ? styles.chipSelected : ''}`.trim()}
+                  style={{ 
+                    backgroundColor: isSelected ? subject.bgColor : 'transparent',
+                    color: isSelected ? subject.textColor : '#666',
+                    borderColor: subject.bgColor 
+                  }}
+                  onClick={() => onToggleSubject(subject.name)}
                 >
-                  <span>{subject}</span>
+                  <span>{subject.name}</span>
                   {isSelected && <span className={styles.chipClose} aria-hidden='true'><CloseIcon /></span>}
                 </button>
               )
             })}
           </div>
         </div>
-
         <div className={styles.filterGroup}>
           <p className={styles.subTitle}>Dle stavu knihy</p>
           <div className={styles.chipList}>

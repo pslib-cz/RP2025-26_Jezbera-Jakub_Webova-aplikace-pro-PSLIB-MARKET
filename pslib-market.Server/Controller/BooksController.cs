@@ -214,7 +214,12 @@ namespace pslib_market.Server.Controller
                     Price = b.Price,
                     OwnerId = b.OwnerId,
                     SaleStatus = b.SaleStatus,
-                    Tags = b.Tags.Select(t => t.Name).ToList(),
+                    Tags = b.Tags.Select(t => new TagDTO
+                    {
+                        Name = t.Name,
+                        BgColor = t.BgColor ?? "#e5e7eb",
+                        TextColor = t.TextColor ?? "#111827"
+                    }).ToList(),
                     OwnerName = b.OwnerName,
                     OwnerEmail = b.OwnerEmail,
                     Condition = b.Condition,
@@ -342,7 +347,12 @@ namespace pslib_market.Server.Controller
                     Price = b.Price,
                     OwnerId = b.OwnerId,
                     SaleStatus = b.SaleStatus,
-                    Tags = b.Tags.Select(t => t.Name).ToList(),
+                    Tags = b.Tags.Select(t => new TagDTO
+                    {
+                        Name = t.Name,
+                        BgColor = t.BgColor ?? "#e5e7eb",
+                        TextColor = t.TextColor ?? "#111827"
+                    }).ToList(),
                     OwnerName = b.OwnerName,
                     OwnerEmail = b.OwnerEmail,
                     Condition = b.Condition,
@@ -622,7 +632,12 @@ namespace pslib_market.Server.Controller
                     Price = b.Price,
                     OwnerId = b.OwnerId,
                     SaleStatus = b.SaleStatus,
-                    Tags = b.Tags.Select(t => t.Name).ToList(),
+                    Tags = b.Tags.Select(t => new TagDTO
+                    {
+                        Name = t.Name,
+                        BgColor = t.BgColor ?? "#e5e7eb",
+                        TextColor = t.TextColor ?? "#111827"
+                    }).ToList(),
                     OwnerName = b.OwnerName,
                     OwnerEmail = b.OwnerEmail,
                     Condition = b.Condition,

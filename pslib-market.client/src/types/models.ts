@@ -1,6 +1,8 @@
 export interface Tag {
   id: number;
   name: string;
+  bgColor: string;
+  textColor: string;
 }
 
 export interface Book {
@@ -14,7 +16,7 @@ export interface Book {
   ownerEmail: string;
   condition: number | string;
   saleStatus: number;
-  tags: string[];
+  tags?: Tag[]; 
   reservations?: BookReservation[];
 }
 

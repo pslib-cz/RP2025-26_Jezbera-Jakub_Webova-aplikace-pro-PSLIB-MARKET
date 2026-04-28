@@ -166,10 +166,18 @@ namespace pslib_market.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BgColor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TextColor")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -179,47 +187,65 @@ namespace pslib_market.Server.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Dějepis"
+                            BgColor = "#FB923C",
+                            Name = "Dějepis",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Němčina"
+                            BgColor = "#F87171",
+                            Name = "Němčina",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Elektrotechnika"
+                            BgColor = "#2DD4BF",
+                            Name = "Elektrotechnika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Fyzika"
+                            BgColor = "#38BDF8",
+                            Name = "Fyzika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 5,
-                            Name = "Matematika"
+                            BgColor = "#4281CE",
+                            Name = "Matematika",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 6,
-                            Name = "Technické kreslení"
+                            BgColor = "#818CF8",
+                            Name = "Technické kreslení",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 7,
-                            Name = "Čeština"
+                            BgColor = "#FBBF24",
+                            Name = "Čeština",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 8,
-                            Name = "Angličtina"
+                            BgColor = "#A78BFA",
+                            Name = "Angličtina",
+                            TextColor = "#FFFFFF"
                         },
                         new
                         {
                             Id = 9,
-                            Name = "Chemie"
+                            BgColor = "#B075EB",
+                            Name = "Chemie",
+                            TextColor = "#FFFFFF"
                         });
                 });
 

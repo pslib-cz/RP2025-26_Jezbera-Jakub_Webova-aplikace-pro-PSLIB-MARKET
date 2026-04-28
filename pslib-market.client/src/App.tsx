@@ -9,6 +9,7 @@ import PendingApprovalsPage from './pages/PendingApprovalsPage';
 import Loader from './components/Loader';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import TagsAdminPage from './pages/TagsAdminPage';
 
 
 
@@ -25,7 +26,8 @@ function App() {
         <Route path="/*" element={<HomePage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/schvalovani" element={<PendingApprovalsPage />} />
-          <Route path="/audit-log" element={<AuditLogPage />} />
+          <Route path="/admin/audit-log" element={<AuditLogPage />} />
+          <Route path="/admin/tagy" element={<TagsAdminPage />} />
           <Route path="/moje-inzeraty" element={<MyOffersPage />} />
           <Route path="/vytvorit-inzerat" element={<CreateOfferPage />} />
           <Route path="/upravit-inzerat/:id" element={<CreateOfferPage />} />

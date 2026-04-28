@@ -8,6 +8,8 @@ import { useAuth } from "react-oidc-context";
 import { useNavigate } from "react-router-dom";
 import FlashMessage, { type FlashMessageType } from "../FlashMessage";
 
+import type { Tag } from "../../types/models"; 
+
 const CONDITIONS = [
   { value: 0, label: "Velmi dobrý" },
   { value: 1, label: "Dobrý" },
@@ -42,7 +44,7 @@ type AdFormValues = z.output<typeof adSchema>;
 type EditBookData = {
   id: number;
   title?: string;
-  tags?: string[];
+  tags?: Tag[]; 
   condition?: number | string;
   price?: number | string;
   description?: string;
@@ -71,7 +73,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
     defaultValues: initialData
       ? {
           title: initialData.title,
-          subject: initialData.tags?.[0] || "",
+          subject: initialData.tags?.[0]?.name || "",
           condition: initialData.condition?.toString() || "",
           price: initialData.price?.toString() || "",
           description: initialData.description || "",
@@ -89,11 +91,11 @@ const AdForm = ({ initialData }: AdFormProps) => {
     ? "Odesílání může trvat několik sekund. Formulář nechávejte otevřený."
     : null;
 
-  useEffect(() => {
+   useEffect(() => {
     const loadTags = async () => {
       try {
         const fetchedTags = await getTags();
-        setTags(fetchedTags);
+        setTags(fetchedTags.map(tag => tag.name));
       } catch {
         setTags([]);
       }

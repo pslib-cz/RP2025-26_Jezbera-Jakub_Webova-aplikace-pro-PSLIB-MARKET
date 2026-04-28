@@ -15,7 +15,7 @@ namespace pslib_market.Server.Models
         public string Title { get; set; }
         public string? Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public List<string> Tags { get; set; }
+        public List<TagDTO> Tags { get; set; }
         public string OwnerId { get; set; }
         public string OwnerName { get; set; }
         public string OwnerEmail { get; set; }
