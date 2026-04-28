@@ -115,6 +115,58 @@ namespace pslib_market.Server.Controller
             return resolvedName;
         }
 
+        private static bool IsSupportedPhotoUpload(IFormFile photo)
+        {
+            var contentType = photo.ContentType?.Trim();
+            if (string.Equals(contentType, "image/jpeg", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(contentType, "image/png", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(contentType, "image/webp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(contentType, "image/gif", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(contentType, "image/bmp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(contentType, "image/tiff", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var extension = Path.GetExtension(photo.FileName);
+            return string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".webp", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".gif", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".tif", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(extension, ".tiff", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<(byte[]? ImageBytes, string? ErrorMessage)> ProcessUploadedPhotoAsync(IFormFile photo)
+        {
+            if (!IsSupportedPhotoUpload(photo))
+            {
+                return (null, "Podporované jsou jen JPEG, PNG, WebP, GIF, BMP nebo TIFF obrázky.");
+            }
+
+            try
+            {
+                using var ms = new MemoryStream();
+                using (var image = await Image.LoadAsync(photo.OpenReadStream()))
+                {
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(800, 800)
+                    }));
+                    await image.SaveAsJpegAsync(ms, new JpegEncoder { Quality = 75 });
+                }
+
+                return (ms.ToArray(), null);
+            }
+            catch (UnknownImageFormatException)
+            {
+                return (null, "Podporované jsou jen JPEG, PNG, WebP, GIF, BMP nebo TIFF obrázky.");
+            }
+        }
+
         private void AddBookActivityLog(int bookId, string action, string details, string? userName = null, string? userEmail = null)
         {
             var actorName = userName ?? GetCurrentUserName();
@@ -251,18 +303,11 @@ namespace pslib_market.Server.Controller
                 return BadRequest("Fotka je povinná.");
             }
 
-            byte[]? imageBytes = null;
-            using var ms = new MemoryStream();
-            using (var image = await Image.LoadAsync(dto.Photo.OpenReadStream()))
+            var processedPhoto = await ProcessUploadedPhotoAsync(dto.Photo);
+            if (!string.IsNullOrEmpty(processedPhoto.ErrorMessage))
             {
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Mode = ResizeMode.Max,
-                    Size = new Size(800, 800)
-                }));
-                await image.SaveAsJpegAsync(ms, new JpegEncoder { Quality = 75 });
+                return BadRequest(processedPhoto.ErrorMessage);
             }
-            imageBytes = ms.ToArray();
 
 
             var book = new Book
@@ -279,7 +324,7 @@ namespace pslib_market.Server.Controller
                 SaleStatus = SaleStatus.Pending,
                 Condition = dto.Condition,
 
-                ImageBlob = imageBytes,
+                ImageBlob = processedPhoto.ImageBytes ?? [],
                 ImageContentType = "image/jpeg",
 
 
@@ -567,19 +612,13 @@ namespace pslib_market.Server.Controller
             }
             if (dto.Photo != null && dto.Photo.Length > 0)
             {
-                byte[]? imageBytes = null;
-                using var ms = new MemoryStream();
-                using (var image = await Image.LoadAsync(dto.Photo.OpenReadStream()))
+                var processedPhoto = await ProcessUploadedPhotoAsync(dto.Photo);
+                if (!string.IsNullOrEmpty(processedPhoto.ErrorMessage))
                 {
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Mode = ResizeMode.Max,
-                        Size = new Size(800, 800)
-                    }));
-                    await image.SaveAsJpegAsync(ms, new JpegEncoder { Quality = 75 });
+                    return BadRequest(processedPhoto.ErrorMessage);
                 }
-                imageBytes = ms.ToArray();
-                book.ImageBlob = imageBytes;
+
+                book.ImageBlob = processedPhoto.ImageBytes ?? [];
             }
 
             if (hasModeratedChanges)

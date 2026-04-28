@@ -89,7 +89,13 @@ const HomePage = () => {
     };
   }, [isMobileFilterOpen, isMobileSortOpen]);
 
-  const searchQuery = (searchParams.get("q") ?? "").trim().toLowerCase();
+  const normalizeSearchText = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+  const searchQuery = normalizeSearchText((searchParams.get("q") ?? "").trim());
 
   useEffect(() => {
     setCurrentPage(1);
@@ -105,7 +111,7 @@ const HomePage = () => {
           (book.tags ?? []).map((t) => t.name).join(" "),
         ];
         return searchableValues.some((value) =>
-          value.toLowerCase().includes(searchQuery),
+          normalizeSearchText(value).includes(searchQuery),
         );
       });
 

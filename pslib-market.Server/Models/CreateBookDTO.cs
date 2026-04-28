@@ -3,11 +3,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace pslib_market.Server.Models
 {
+    public static class BookValidationLimits
+    {
+        public const int DescriptionMaxLength = 500;
+    }
+
     public class CreateBookDTO
     {
         public string Title { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
         public decimal Price { get; set; }
+
+        [MaxLength(BookValidationLimits.DescriptionMaxLength)]
         public string? Description { get; set; }
 
         [Required]

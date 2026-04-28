@@ -18,6 +18,20 @@ const CONDITIONS = [
 ] as const;
 
 const MAX_TITLE_LENGTH = 50;
+const MAX_DESCRIPTION_LENGTH = 400;
+const ALLOWED_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff";
+const ALLOWED_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff"]);
+const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff"]);
+
+const isSupportedImageFile = (file: File) => {
+  const mimeType = file.type.toLowerCase();
+  if (mimeType && ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
+    return true;
+  }
+
+  const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+  return ALLOWED_IMAGE_EXTENSIONS.has(extension);
+};
 
 const adSchema = z.object({ 
   title: z
@@ -35,7 +49,11 @@ const adSchema = z.object({
     .refine((value) => !Number.isNaN(Number(value)), "Cena musí být číslo")
     .transform((value) => Number(value))
     .refine((value) => value >= 0, "Cena nesmí být záporná"),
-  description: z.string().trim().optional(),
+  description: z
+    .string()
+    .trim()
+    .max(MAX_DESCRIPTION_LENGTH, `Popisek může mít maximálně ${MAX_DESCRIPTION_LENGTH} znaků`)
+    .optional(),
 });
 
 type AdFormInput = z.input<typeof adSchema>;
@@ -67,6 +85,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
     register,
     handleSubmit,
     setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<AdFormInput, unknown, AdFormValues>({
     resolver: zodResolver(adSchema),
@@ -112,7 +131,17 @@ const AdForm = ({ initialData }: AdFormProps) => {
   };
 
   const onSubmit = async (data: AdFormValues) => {
-    if (!isEditMode && (!data.photo || data.photo.length === 0)) {
+    const selectedPhoto = data.photo?.[0];
+
+    if (selectedPhoto && !isSupportedImageFile(selectedPhoto)) {
+      setError("photo", {
+        type: "manual",
+        message: "Podporované jsou jen JPG, PNG, WebP, GIF, BMP nebo TIFF obrázky.",
+      });
+      return;
+    }
+
+    if (!isEditMode && !selectedPhoto) {
       setError("photo", {
         type: "manual",
         message: "Foto učebnice je povinné",
@@ -135,8 +164,8 @@ const AdForm = ({ initialData }: AdFormProps) => {
       formData.append("price", data.price.toString());
       formData.append("description", data.description || "");
 
-      if (data.photo && data.photo.length > 0) {
-        formData.append("Photo", data.photo[0]);
+      if (selectedPhoto) {
+        formData.append("Photo", selectedPhoto);
       }
 
       const url = isEditMode
@@ -259,10 +288,24 @@ const AdForm = ({ initialData }: AdFormProps) => {
           <input
             id="photo"
             type="file"
-            accept="image/*"
+            accept={ALLOWED_IMAGE_ACCEPT}
             {...photoRegister}
             onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && !isSupportedImageFile(file)) {
+                e.target.value = "";
+                setFileName("");
+                setError("photo", {
+                  type: "manual",
+                  message: "Podporované jsou jen JPG, PNG, WebP, GIF, BMP nebo TIFF obrázky.",
+                });
+                return;
+              }
+
               photoRegister.onChange(e);
+              if (file) {
+                clearErrors("photo");
+              }
               handleFileChange(e);
             }}
             className={styles.fileInput}
@@ -326,6 +369,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
         <textarea
           id="description"
           rows={4}
+          maxLength={MAX_DESCRIPTION_LENGTH}
           {...register("description")}
           className={styles.input}
         />

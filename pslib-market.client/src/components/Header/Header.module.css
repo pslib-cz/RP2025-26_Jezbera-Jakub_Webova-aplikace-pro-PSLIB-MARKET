@@ -101,6 +101,7 @@
 	border: 1px solid transparent;
 	width: 100%;
 	box-sizing: border-box;
+	white-space: nowrap;
 }
 
 .navLinkPrimary {
@@ -172,6 +173,10 @@
 		display: flex;
 		flex-wrap: nowrap;
 		align-items: center;
+	}
+
+	.navLink {
+		min-width: 11.5rem;
 	}
 
 	.desktopAuth {
