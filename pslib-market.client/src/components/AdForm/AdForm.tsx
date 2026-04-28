@@ -23,6 +23,8 @@ const ALLOWED_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/bm
 const ALLOWED_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff"]);
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff"]);
 
+const getCurrentTimestampString = () => Date.now().toString();
+
 const isSupportedImageFile = (file: File) => {
   const mimeType = file.type.toLowerCase();
   if (mimeType && ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
@@ -163,12 +165,15 @@ const AdForm = ({ initialData }: AdFormProps) => {
     }
   };
 
-  const onSubmit = async (data: AdFormValues) => {
+ const onSubmit = async (data: AdFormValues) => {
     if (!isEditMode) {
       const lastSubmission = localStorage.getItem(RATE_LIMIT_KEY);
       if (lastSubmission) {
         const lastTime = parseInt(lastSubmission, 10);
-        const elapsed = Date.now() - lastTime;
+        
+        const currentTime = new Date().getTime();
+        const elapsed = currentTime - lastTime;
+        
         if (elapsed < RATE_LIMIT_MS) {
           const secondsRemaining = Math.ceil((RATE_LIMIT_MS - elapsed) / 1000);
           setFlashType("error");
@@ -177,6 +182,8 @@ const AdForm = ({ initialData }: AdFormProps) => {
         }
       }
     }
+    
+    // ... zbytek tvého kódu (zpracování fotky, fetch na API atd.) ...
 
     const selectedPhoto = data.photo?.[0];
 
@@ -234,10 +241,8 @@ const AdForm = ({ initialData }: AdFormProps) => {
         return;
       }
 
-      if (!isEditMode) {
-        // eslint-disable-next-line react-hooks/rules-of-hooks, no-restricted-globals
-        const submissionTime = Date.now();
-        localStorage.setItem(RATE_LIMIT_KEY, submissionTime.toString());
+     if (!isEditMode) {
+        localStorage.setItem(RATE_LIMIT_KEY, getCurrentTimestampString());
       }
 
       navigate(isEditMode ? "/moje-inzeraty" : "/", {
