@@ -9,6 +9,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace pslib_market.Server.Controller
@@ -283,6 +284,7 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpPost]
+        [EnableRateLimiting("UserBasedAdCreation")]
         public async Task<ActionResult<Book>> CreateBook([FromForm] CreateBookDTO dto)
         {
 

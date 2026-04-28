@@ -6,6 +6,9 @@ using pslib_market.Server.Services;
 using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +77,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("UserBasedAdCreation", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            // Jako klíč použijeme Email uživatele. Pokud není, použijeme doménu.
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+                          ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 1, // Povolí 1 inzerát...
+                Window = TimeSpan.FromSeconds(30), // ...každých 30 sekund.
+                QueueLimit = 0
+            }));
+});
 
 
 var app = builder.Build();
