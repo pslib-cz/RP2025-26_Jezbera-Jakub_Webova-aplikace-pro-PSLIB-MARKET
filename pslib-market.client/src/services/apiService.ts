@@ -1,12 +1,15 @@
-import type { Book, BookActivityLog, Tag } from '../types/models';
+import type { Book, BookActivityLog, Tag } from "../types/models";
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(configuredApiBaseUrl ?? '');
+const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(
+  configuredApiBaseUrl ?? "",
+);
 
-const rawApiBaseUrl = import.meta.env.DEV && isLocalhostAbsoluteApi
-  ? '/api'
-  : configuredApiBaseUrl || '/api';
-export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
+const rawApiBaseUrl =
+  import.meta.env.DEV && isLocalhostAbsoluteApi
+    ? "/api"
+    : configuredApiBaseUrl || "/api";
+export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, "");
 
 const createAuthHeaders = (token?: string): HeadersInit => {
   if (!token) {
@@ -22,13 +25,11 @@ export const getBooks = async (token?: string): Promise<Book[]> => {
   });
 
   if (!response.ok) {
-    throw new Error('Nepodařilo se stáhnout inzeráty z backendu.');
+    throw new Error("Nepodařilo se stáhnout inzeráty z backendu.");
   }
 
   return await response.json();
 };
-
-
 
 export const getMyBooks = async (token: string): Promise<Book[]> => {
   const response = await fetch(`${API_BASE_URL}/books/my`, {
@@ -36,50 +37,58 @@ export const getMyBooks = async (token: string): Promise<Book[]> => {
   });
 
   if (!response.ok) {
-    throw new Error('Nepodařilo se stáhnout vaše inzeráty z backendu.');
+    throw new Error("Nepodařilo se stáhnout vaše inzeráty z backendu.");
   }
 
   return await response.json();
 };
 
-export const changeBookSaleStatus = async (bookId: number, newStatus: number, token: string): Promise<void> => {
+export const changeBookSaleStatus = async (
+  bookId: number,
+  newStatus: number,
+  token: string,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/status`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
       ...createAuthHeaders(token),
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(newStatus),
   });
 
   if (!response.ok) {
-    throw new Error('Nepodařilo se aktualizovat stav prodeje knihy.');
+    throw new Error("Nepodařilo se aktualizovat stav prodeje knihy.");
   }
 };
 
-
-
-export const approveBook = async (bookId: number, token: string): Promise<void> => {
+export const approveBook = async (
+  bookId: number,
+  token: string,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/approve`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: createAuthHeaders(token),
   });
 
   if (!response.ok) {
     const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se schválit inzerát.');
+    throw new Error(errorMessage || "Nepodařilo se schválit inzerát.");
   }
 };
 
-export const rejectBook = async (bookId: number, token: string): Promise<void> => {
+export const rejectBook = async (
+  bookId: number,
+  token: string,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/reject`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: createAuthHeaders(token),
   });
 
   if (!response.ok) {
     const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se zamítnout inzerát.');
+    throw new Error(errorMessage || "Nepodařilo se zamítnout inzerát.");
   }
 };
 
@@ -89,64 +98,105 @@ export const getPendingBooks = async (token: string): Promise<Book[]> => {
   });
 
   if (!response.ok) {
-    throw new Error('Nepodařilo se stáhnout čekající inzeráty z backendu.');
+    throw new Error("Nepodařilo se stáhnout čekající inzeráty z backendu.");
   }
 
   return await response.json();
 };
 
-export const reserveBook = async (bookId: number, token: string): Promise<void> => {
+export const reserveBook = async (
+  bookId: number,
+  token: string,
+): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/reserve`, {
-    method: 'POST',
+    method: "POST",
     headers: createAuthHeaders(token),
   });
 
   if (!response.ok) {
     const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se odeslat zájem o knihu.');
+    throw new Error(errorMessage || "Nepodařilo se odeslat zájem o knihu.");
   }
 };
 
-export const getAuditLogs = async (token: string): Promise<BookActivityLog[]> => {
+export const getAuditLogs = async (
+  token: string,
+): Promise<BookActivityLog[]> => {
   const response = await fetch(`${API_BASE_URL}/auditlog`, {
     headers: createAuthHeaders(token),
   });
 
   if (!response.ok) {
     const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se načíst audit log.');
+    throw new Error(errorMessage || "Nepodařilo se načíst audit log.");
   }
 
   return await response.json();
 };
 
-
-
 export const getTags = async (): Promise<Tag[]> => {
   const response = await fetch(`${API_BASE_URL}/tags`);
 
   if (!response.ok) {
-    throw new Error('Nepodařilo se stáhnout předměty z backendu.');
+    throw new Error("Nepodařilo se stáhnout předměty z backendu.");
   }
 
   return await response.json();
 };
 
 export const createTag = async (
-  tagData: { name: string; bgColor: string; textColor: string }, 
-  token: string
+  tagData: { name: string; bgColor: string; textColor: string },
+  token: string,
 ): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/tags`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       ...createAuthHeaders(token),
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(tagData),
   });
 
   if (!response.ok) {
     const errorMessage = await response.text();
-    throw new Error(errorMessage || 'Nepodařilo se vytvořit nový předmět.');
+    throw new Error(errorMessage || "Nepodařilo se vytvořit nový předmět.");
+  }
+};
+
+export const updateTag = async (
+  currentName: string,
+  tagData: { name: string; bgColor: string; textColor: string },
+  token: string,
+): Promise<void> => {
+  const response = await fetch(
+    `${API_BASE_URL}/tags/${encodeURIComponent(currentName)}`,
+    {
+      method: "PUT",
+      headers: {
+        ...createAuthHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(tagData),
+    },
+  );
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || "Nepodařilo se upravit předmět.");
+  }
+};
+
+export const deleteTag = async (name: string, token: string): Promise<void> => {
+  const response = await fetch(
+    `${API_BASE_URL}/tags/${encodeURIComponent(name)}`,
+    {
+      method: "DELETE",
+      headers: createAuthHeaders(token),
+    },
+  );
+
+  if (!response.ok) {
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || "Nepodařilo se smazat předmět.");
   }
 };

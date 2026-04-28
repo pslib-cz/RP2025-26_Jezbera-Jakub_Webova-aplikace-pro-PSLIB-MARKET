@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
-import { getBooks } from "../services/apiService";
+import { getBooks, getTags } from "../services/apiService";
 import BookCard from "../components/BookCard/BookCard";
-import type { Book } from "../types/models";
+import type { Book, Tag } from "../types/models";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import FlashMessage, {
   type FlashMessageType,
@@ -21,13 +21,49 @@ type FlashMessageState = {
   flashType?: FlashMessageType;
 };
 
-const RESERVED_STATUS = 1;
+const STATUS_AVAILABLE = 0;
+const STATUS_RESERVED = 1;
+const STATUS_SOLD = 2;
+const STATUS_ARCHIVED = 3;
+const STATUS_PENDING = 4;
+const STATUS_REJECTED = 5;
+
 const ITEMS_PER_PAGE = 12;
+
+const hasAdminAccess = (
+  profile: Record<string, unknown> | undefined,
+): boolean => {
+  if (!profile) return false;
+  const adminClaim = profile["market.admin"];
+  const adminRole = profile["role"];
+  const claimValues = Array.isArray(adminClaim) ? adminClaim : [adminClaim];
+  const roleValues = Array.isArray(adminRole) ? adminRole : [adminRole];
+
+  return (
+    claimValues.some((value) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value === 1;
+      if (typeof value === "string") {
+        return value.toLowerCase() === "1" || value.toLowerCase() === "true";
+      }
+      return false;
+    }) ||
+    roleValues.some(
+      (value) =>
+        typeof value === "string" && value.toLowerCase() === "market.admin",
+    )
+  );
+};
 
 const HomePage = () => {
   const auth = useAuth();
+  const isAdmin =
+    auth.isAuthenticated &&
+    hasAdminAccess(auth.user?.profile as Record<string, unknown> | undefined);
 
   const [books, setBooks] = useState<Book[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
@@ -38,6 +74,7 @@ const HomePage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+
   const [flashMessage, setFlashMessage] = useState<string | null>(() => {
     const state = location.state as FlashMessageState | null;
     return state?.flashMessage ?? null;
@@ -49,41 +86,43 @@ const HomePage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const loadBooks = useCallback(async () => {
+  const loadData = useCallback(async () => {
+    if (auth.isLoading) return;
+
     setIsLoading(true);
     setLoadError(null);
-
     try {
-      const data = await getBooks();
-      setBooks(data);
+      const [booksData, tagsData] = await Promise.all([
+        getBooks(auth.user?.access_token),
+        getTags(),
+      ]);
+      setBooks(booksData);
+      setAllTags(tagsData);
     } catch (error) {
       setLoadError(
-        error instanceof Error ? error.message : "Nepodařilo se načíst knihy.",
+        error instanceof Error ? error.message : "Nepodařilo se načíst data.",
       );
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [auth.isLoading, auth.user?.access_token]);
 
   useEffect(() => {
     document.title = "Nabídka knih | PSLIB Market";
-    loadBooks();
-  }, [loadBooks]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const state = location.state as FlashMessageState | null;
     if (!state?.flashMessage) return;
-
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     const shouldLockScroll = isMobileFilterOpen || isMobileSortOpen;
     if (!shouldLockScroll) return;
-
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = originalOverflow;
     };
@@ -94,7 +133,6 @@ const HomePage = () => {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
-
   const searchQuery = normalizeSearchText((searchParams.get("q") ?? "").trim());
 
   useEffect(() => {
@@ -157,20 +195,6 @@ const HomePage = () => {
     .trim()
     .toLowerCase();
 
-  const subjectOptions = useMemo(() => {
-    const allTagsMap = new Map();
-    books.forEach((book) => {
-      (book.tags ?? []).forEach((tag) => {
-        if (tag && tag.name && !allTagsMap.has(tag.name)) {
-          allTagsMap.set(tag.name, tag);
-        }
-      });
-    });
-    return Array.from(allTagsMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name, "cs"),
-    );
-  }, [books]);
-
   const minAvailablePrice =
     books.length > 0 ? Math.min(...books.map((book) => book.price)) : 0;
   const maxAvailablePrice =
@@ -202,23 +226,42 @@ const HomePage = () => {
     }
 
     if (appliedFilters.saleStatuses.length > 0) {
-      const isAvailable = book.saleStatus !== RESERVED_STATUS;
-      const isReserved = book.saleStatus === RESERVED_STATUS;
-      const isReservedByMe = (book.reservations ?? []).some(
-        (reservation) =>
-          reservation.reservedByUserEmail?.trim().toLowerCase() ===
-          normalizedCurrentUserEmail,
-      );
-
       const matchesAnyStatus = appliedFilters.saleStatuses.some(
         (selectedStatus) => {
-          if (selectedStatus === "available") return isAvailable;
-          if (selectedStatus === "reserved") return isReserved;
-          return isReservedByMe;
+          if (selectedStatus === "available")
+            return book.saleStatus === STATUS_AVAILABLE;
+          if (selectedStatus === "reserved")
+            return book.saleStatus === STATUS_RESERVED;
+          if (selectedStatus === "sold") return book.saleStatus === STATUS_SOLD;
+          if (selectedStatus === "pending")
+            return book.saleStatus === STATUS_PENDING;
+          if (selectedStatus === "rejected")
+            return book.saleStatus === STATUS_REJECTED;
+
+          if (selectedStatus === "reservedByMe") {
+            return (book.reservations ?? []).some(
+              (reservation) =>
+                reservation.reservedByUserEmail?.trim().toLowerCase() ===
+                normalizedCurrentUserEmail,
+            );
+          }
+          return false;
         },
       );
 
       if (!matchesAnyStatus) return false;
+    } else {
+      if (
+        !isAdmin &&
+        [
+          STATUS_ARCHIVED,
+          STATUS_SOLD,
+          STATUS_PENDING,
+          STATUS_REJECTED,
+        ].includes(book.saleStatus)
+      ) {
+        return false;
+      }
     }
 
     return true;
@@ -287,7 +330,7 @@ const HomePage = () => {
           <button
             type="button"
             className={styles.retryButton}
-            onClick={loadBooks}
+            onClick={loadData}
           >
             Zkusit znovu
           </button>
@@ -314,10 +357,11 @@ const HomePage = () => {
             <FilterSidebar
               minAvailablePrice={minAvailablePrice}
               maxAvailablePrice={maxAvailablePrice}
-              subjectOptions={subjectOptions}
+              subjectOptions={allTags}
               visibleCount={filterMatchedBooks.length}
               totalCount={filteredBooks.length}
               appliedFilters={appliedFilters}
+              isAdmin={isAdmin}
               onApplyFilters={setAppliedFilters}
             />
           </div>
@@ -377,6 +421,8 @@ const HomePage = () => {
                         tags={book.tags ?? []}
                         isReservedByCurrentUser={isReservedByCurrentUser}
                         isOwnedByCurrentUser={isOwnedByCurrentUser}
+                        isAdmin={isAdmin}
+                        onReloadRequest={loadData}
                       />
                     );
                   })}
@@ -437,10 +483,11 @@ const HomePage = () => {
             <FilterSidebar
               minAvailablePrice={minAvailablePrice}
               maxAvailablePrice={maxAvailablePrice}
-              subjectOptions={subjectOptions}
+              subjectOptions={allTags}
               visibleCount={filterMatchedBooks.length}
               totalCount={filteredBooks.length}
               appliedFilters={appliedFilters}
+              isAdmin={isAdmin}
               onApplyFilters={setAppliedFilters}
               onCloseMobile={() => setIsMobileFilterOpen(false)}
             />

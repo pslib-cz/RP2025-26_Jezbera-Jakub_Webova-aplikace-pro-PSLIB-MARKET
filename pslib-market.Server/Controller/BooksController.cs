@@ -41,7 +41,11 @@ namespace pslib_market.Server.Controller
                  || string.Equals(c.Type, "roles", StringComparison.OrdinalIgnoreCase))
                 && string.Equals(c.Value, "market.admin", StringComparison.OrdinalIgnoreCase));
 
-            return hasMarketAdminClaim || hasAdminRole;
+            var userEmail = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                ?? user.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+
+            return hasMarketAdminClaim || hasAdminRole ;
         }
 
         private static string? GetUserEmailFromClaims(ClaimsPrincipal user)
@@ -243,7 +247,6 @@ namespace pslib_market.Server.Controller
             _logger = logger;
             _configuration = configuration;
         }
-
         [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetBooks()
@@ -251,12 +254,20 @@ namespace pslib_market.Server.Controller
             var now = DateTime.UtcNow;
             await ArchiveExpiredReservedBooksAsync(now);
             var oneMonthAgo = now.AddMonths(-1);
+            var isAdmin = User.Identity?.IsAuthenticated == true && HasAdminAccess(User);
 
-            var books = await _context.Books
+            var booksQuery = _context.Books
                 .Include(b => b.Tags)
-                .Where(b =>
+                .AsQueryable();
+
+            if (!isAdmin)
+            {
+                booksQuery = booksQuery.Where(b =>
                     b.SaleStatus == SaleStatus.Available ||
-                    (b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt >= oneMonthAgo))
+                    (b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt >= oneMonthAgo));
+            }
+
+            var books = await booksQuery
                 .OrderBy(b => b.SaleStatus == SaleStatus.Reserved ? 1 : 0)
                 .ThenByDescending(b => b.CreatedAt)
                 .Select(b => new BookDto
@@ -300,7 +311,7 @@ namespace pslib_market.Server.Controller
             {
                 return Unauthorized("Neplatné uživatelské údaje.");
             }
-            if ( dto.Photo == null || dto.Photo.Length == 0)
+            if (dto.Photo == null || dto.Photo.Length == 0)
             {
                 return BadRequest("Fotka je povinná.");
             }
@@ -424,8 +435,13 @@ namespace pslib_market.Server.Controller
             var userId = GetCurrentUserId();
             var userName = GetCurrentUserName();
             var userEmail = GetCurrentUserEmail();
+            var isAdmin = HasAdminAccess(User);
 
-            if (book.OwnerId != userId) return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
+            if (book.OwnerId != userId && !isAdmin)
+            {
+                return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
+            }
+
 
             var previousStatus = book.SaleStatus;
             book.SaleStatus = newStatus;
@@ -709,7 +725,7 @@ namespace pslib_market.Server.Controller
 
             if (book == null) return NotFound("Inzerát nebyl nalezen.");
             if (book.SaleStatus != SaleStatus.Pending) return BadRequest("Inzerát není ve stavu čekající na schválení.");
-            
+
             book.SaleStatus = SaleStatus.Available;
             book.LastUpdatedAt = DateTime.UtcNow;
 
@@ -774,6 +790,6 @@ namespace pslib_market.Server.Controller
 
 
         }
-        }
+    }
 }
 

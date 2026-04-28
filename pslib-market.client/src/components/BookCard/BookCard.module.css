@@ -1,18 +1,18 @@
 .card {
-    --subject-history-bg: #FB923C;
-    --subject-german-bg: #F87171;
-    --subject-electronics-bg: #2DD4BF;
-    --subject-physics-bg: #38BDF8;
-    --subject-math-bg: #4281CE;
-    --subject-technical-drawing-bg: #818CF8;
-    --subject-czech-bg: #FBBF24;
-    --subject-english-bg: #A78BFA;
-    --subject-chemistry-bg: #B075EB;
+    --subject-history-bg: #fb923c;
+    --subject-german-bg: #f87171;
+    --subject-electronics-bg: #2dd4bf;
+    --subject-physics-bg: #38bdf8;
+    --subject-math-bg: #4281ce;
+    --subject-technical-drawing-bg: #818cf8;
+    --subject-czech-bg: #fbbf24;
+    --subject-english-bg: #a78bfa;
+    --subject-chemistry-bg: #b075eb;
 
-    --condition-very-good-border: #A3E635;
-    --condition-good-border: #28B883;
-    --condition-written-border: #CEAA1C;
-    --condition-damaged-border: #E85066;
+    --condition-very-good-border: #a3e635;
+    --condition-good-border: #28b883;
+    --condition-written-border: #ceaa1c;
+    --condition-damaged-border: #e85066;
 
     display: flex;
     flex-direction: column;
@@ -26,13 +26,12 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-
-
 .cardImage {
     width: 100%;
     object-fit: cover;
     border-radius: 1rem 1rem 0 0;
 }
+
 .cardWrap {
     display: flex;
     flex-direction: column;
@@ -49,7 +48,7 @@
     top: 10px;
     right: 10px;
     z-index: 2;
-    padding: .5rem 1rem;
+    padding: 0.5rem 1rem;
     border-radius: 80px;
     font-size: 16px;
     font-weight: 700;
@@ -88,7 +87,8 @@ p {
     padding: 0 1rem;
     min-width: 0;
 }
-.cardOwner{
+
+.cardOwner {
     font-size: 14px;
     font-weight: 400;
     overflow-wrap: anywhere;
@@ -102,13 +102,17 @@ p {
     gap: 0.5rem;
 }
 
-.cardFooter > :global(button) {
+.cardFooter> :global(button) {
     width: 100%;
 }
 
 .interestButtonWrap :global(button) {
     width: 100%;
-    transition: background-color .25s ease, border-color .25s ease, color .25s ease, transform .25s ease;
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease;
 }
 
 .interestButtonSending :global(button) {
@@ -122,21 +126,23 @@ p {
     background-color: var(--primary-blue);
     border-color: var(--primary-blue);
     color: var(--white);
-    animation: interestSuccess .45s ease;
+    animation: interestSuccess 0.45s ease;
 }
 
 .cardActionError {
-    margin-top: .25rem;
+    margin-top: 0.25rem;
     color: #dc2626;
     font-size: 13px;
     font-weight: 500;
 }
-.cardPrice{
-    color: #22C55E;
+
+.cardPrice {
+    color: #22c55e;
     font-size: 22px;
     font-weight: bold;
 }
- .cardDescription {
+
+.cardDescription {
     font-size: 14px;
     font-weight: 400;
     color: #333;
@@ -145,8 +151,6 @@ p {
     hyphens: auto;
 }
 
-
-
 .tagChip {
     padding: 2px 10px;
     border-radius: 32px;
@@ -154,7 +158,6 @@ p {
     font-weight: 400;
     color: #ffffff;
 }
-
 
 .cardCondition {
     font-size: 12px;
@@ -224,10 +227,12 @@ p {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.02);
-        opacity: .92;
+        opacity: 0.92;
     }
+
     100% {
         transform: scale(1);
         opacity: 1;
@@ -238,9 +243,11 @@ p {
     0% {
         transform: scale(1);
     }
+
     55% {
         transform: scale(1.04);
     }
+
     100% {
         transform: scale(1);
     }
@@ -264,26 +271,76 @@ p {
         margin-left: 2rem;
         margin-top: 2.5rem;
     }
+
     .cardContent {
-        padding:  0 2rem 2rem 2rem;
+        padding: 0 2rem 2rem 2rem;
     }
+
     .cardFooter {
         flex-direction: row;
         gap: 1rem;
         align-items: center;
     }
 
-    .cardFooter > :global(button) {
-        flex-grow: 1;
-        flex-basis: 0%;
+    .cardFooter> :global(button) {
+        width: 100%;
     }
+
     .cardTitle {
-        font-size: 1.5rem; 
-         font-weight: 600;
+        font-size: 1.5rem;
+        font-weight: 600;
     }
+
     .cardDescription {
         font-size: 1rem;
     }
+}
 
+.adminPanel {
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+}
 
+.adminPanelHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.adminPanelTitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.adminPanelEdit {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+}
+
+.adminActionGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.actionButtonWrapper {
+    width: 100%;
+}
+
+.actionButtonWrapper :global(button) {
+    width: 100%;
 }

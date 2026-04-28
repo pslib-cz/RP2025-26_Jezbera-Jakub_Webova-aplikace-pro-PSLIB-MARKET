@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace pslib_market.Server.Controller
 {
-  
+
 
     [Route("api/[controller]")]
     [ApiController]
@@ -49,11 +49,11 @@ namespace pslib_market.Server.Controller
 
             var bgColor = !string.IsNullOrWhiteSpace(tagDto.BgColor) && hexRegex.IsMatch(tagDto.BgColor)
                 ? tagDto.BgColor
-                : "#38BDF8"; 
+                : "#38BDF8";
 
             var textColor = !string.IsNullOrWhiteSpace(tagDto.TextColor) && hexRegex.IsMatch(tagDto.TextColor)
                 ? tagDto.TextColor
-                : "#FFFFFF"; 
+                : "#FFFFFF";
 
             bool tagExists = await _context.Tags.AnyAsync(t => t.Name.ToLower() == tagName.ToLower());
             if (tagExists) return BadRequest("Tag s tímto názvem již existuje.");
@@ -68,6 +68,43 @@ namespace pslib_market.Server.Controller
             _context.Tags.Add(newTag);
             await _context.SaveChangesAsync();
             return Ok(newTag);
+        }
+
+        [HttpPut("{currentName}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> UpdateTag(string currentName, [FromBody] TagDTO tagDto)
+        {
+            var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name.ToLower() == currentName.ToLower());
+            if (tag == null) return NotFound("Původní tag nebyl nalezen.");
+
+            var newName = tagDto.Name.Trim();
+
+            if (!string.Equals(tag.Name, newName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (await _context.Tags.AnyAsync(t => t.Name.ToLower() == newName.ToLower()))
+                    return BadRequest("Tag s tímto novým názvem již existuje.");
+            }
+
+            var hexRegex = new Regex("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$");
+
+            tag.Name = newName;
+            tag.BgColor = !string.IsNullOrWhiteSpace(tagDto.BgColor) && hexRegex.IsMatch(tagDto.BgColor) ? tagDto.BgColor : tag.BgColor;
+            tag.TextColor = !string.IsNullOrWhiteSpace(tagDto.TextColor) && hexRegex.IsMatch(tagDto.TextColor) ? tagDto.TextColor : tag.TextColor;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{name}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteTag(string name)
+        {
+            var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name.ToLower() == name.ToLower());
+            if (tag == null) return NotFound("Tag nebyl nalezen.");
+
+            _context.Tags.Remove(tag);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
