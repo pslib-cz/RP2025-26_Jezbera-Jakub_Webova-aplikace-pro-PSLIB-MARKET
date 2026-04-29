@@ -9,6 +9,8 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using System.Security.Claims;
+using SixLabors.ImageSharp;
+using pslib_market.Server.Services.ImageProcessing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,17 +86,20 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("UserBasedAdCreation", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            // Jako klíč použijeme Email uživatele. Pokud není, použijeme doménu.
             partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
                           ?? httpContext.Request.Headers.Host.ToString(),
             factory: partition => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
-                PermitLimit = 1, // Povolí 1 inzerát...
-                Window = TimeSpan.FromSeconds(30), // ...každých 30 sekund.
+                PermitLimit = 1, 
+                Window = TimeSpan.FromSeconds(30), 
                 QueueLimit = 0
             }));
 });
+
+
+builder.Services.AddSingleton<ImageProcessingQueue>();
+builder.Services.AddHostedService<ImageProcessingWorker>();
 
 
 var app = builder.Build();

@@ -4,4 +4,5 @@
     <Deploy />
   </Project>
   <Project Path="pslib-market.Server/pslib-market.Server.csproj" />
+  <Project Path="pslib-market.Tests/pslib-market.Tests.csproj" />
 </Solution>

@@ -10,11 +10,11 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
-
+using pslib_market.Server.Helpers;
+using pslib_market.Server.Services.ImageProcessing;
 
 namespace pslib_market.Server.Controller
 {
-
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -41,11 +41,7 @@ namespace pslib_market.Server.Controller
                  || string.Equals(c.Type, "roles", StringComparison.OrdinalIgnoreCase))
                 && string.Equals(c.Value, "market.admin", StringComparison.OrdinalIgnoreCase));
 
-            var userEmail = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-                ?? user.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-
-            return hasMarketAdminClaim || hasAdminRole ;
+            return hasMarketAdminClaim || hasAdminRole;
         }
 
         private static string? GetUserEmailFromClaims(ClaimsPrincipal user)
@@ -103,74 +99,7 @@ namespace pslib_market.Server.Controller
                 ?? User.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
         }
 
-        private static string ResolveUserName(string? userName, string? userEmail, string fallback = "Neznámý uživatel")
-        {
-            var resolvedName = userName;
 
-            if (string.IsNullOrWhiteSpace(resolvedName) && !string.IsNullOrWhiteSpace(userEmail))
-            {
-                resolvedName = userEmail.Split('@')[0];
-            }
-
-            if (string.IsNullOrWhiteSpace(resolvedName))
-            {
-                return fallback;
-            }
-
-            return resolvedName;
-        }
-
-        private static bool IsSupportedPhotoUpload(IFormFile photo)
-        {
-            var contentType = photo.ContentType?.Trim();
-            if (string.Equals(contentType, "image/jpeg", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(contentType, "image/png", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(contentType, "image/webp", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(contentType, "image/gif", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(contentType, "image/bmp", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(contentType, "image/tiff", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var extension = Path.GetExtension(photo.FileName);
-            return string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".webp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".gif", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".tif", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(extension, ".tiff", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private async Task<(byte[]? ImageBytes, string? ErrorMessage)> ProcessUploadedPhotoAsync(IFormFile photo)
-        {
-            if (!IsSupportedPhotoUpload(photo))
-            {
-                return (null, "Podporované jsou jen JPEG, PNG, WebP, GIF, BMP nebo TIFF obrázky.");
-            }
-
-            try
-            {
-                using var ms = new MemoryStream();
-                using (var image = await Image.LoadAsync(photo.OpenReadStream()))
-                {
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Mode = ResizeMode.Max,
-                        Size = new Size(800, 800)
-                    }));
-                    await image.SaveAsJpegAsync(ms, new JpegEncoder { Quality = 75 });
-                }
-
-                return (ms.ToArray(), null);
-            }
-            catch (UnknownImageFormatException)
-            {
-                return (null, "Podporované jsou jen JPEG, PNG, WebP, GIF, BMP nebo TIFF obrázky.");
-            }
-        }
 
         private void AddBookActivityLog(int bookId, string action, string details, string? userName = null, string? userEmail = null)
         {
@@ -180,7 +109,7 @@ namespace pslib_market.Server.Controller
             _context.BookActivityLogs.Add(new BookActivityLog
             {
                 BookId = bookId,
-                UserId = ResolveUserName(actorName, actorEmail),
+                UserId = BookHelpers.ResolveUserName(actorName, actorEmail),
                 Action = action,
                 Details = details,
                 TimeStamp = DateTime.UtcNow
@@ -235,6 +164,7 @@ namespace pslib_market.Server.Controller
 
             return $"{body}\n\nOtevřít PSLIB Market: {targetUrl}";
         }
+
 
         public BooksController(
             ApplicationDbContext context,
@@ -296,39 +226,38 @@ namespace pslib_market.Server.Controller
 
         [HttpPost]
         [EnableRateLimiting("UserBasedAdCreation")]
-        public async Task<ActionResult<Book>> CreateBook([FromForm] CreateBookDTO dto)
+        public async Task<ActionResult<Book>> CreateBook([FromForm] CreateBookDTO dto, [FromServices] ImageProcessingQueue imageQueue)
         {
-
             var userId = GetCurrentUserId();
-
             var userEmail = GetCurrentUserEmail();
+            var userNameRaw = GetCurrentUserName();
 
-            var userName = GetCurrentUserName();
-
-            userName = ResolveUserName(userName, userEmail, fallback: string.Empty);
+            var userName = BookHelpers.ResolveUserName(userNameRaw, userEmail, fallback: string.Empty);
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userName))
             {
                 return Unauthorized("Neplatné uživatelské údaje.");
             }
+
             if (dto.Photo == null || dto.Photo.Length == 0)
             {
                 return BadRequest("Fotka je povinná.");
             }
 
-            var processedPhoto = await ProcessUploadedPhotoAsync(dto.Photo);
-            if (!string.IsNullOrEmpty(processedPhoto.ErrorMessage))
+            if (!BookHelpers.IsSupportedPhotoUpload(dto.Photo.ContentType, dto.Photo.FileName))
             {
-                return BadRequest(processedPhoto.ErrorMessage);
+                return BadRequest("Podporované jsou jen JPEG, PNG, WebP, GIF, BMP nebo TIFF obrázky.");
             }
 
+            using var memoryStream = new MemoryStream();
+            await dto.Photo.CopyToAsync(memoryStream);
+            var rawImageBytes = memoryStream.ToArray();
 
             var book = new Book
             {
                 Title = dto.Title,
                 Price = dto.Price,
                 Description = dto.Description,
-
                 OwnerId = userId,
                 OwnerEmail = userEmail,
                 OwnerName = userName,
@@ -336,12 +265,11 @@ namespace pslib_market.Server.Controller
                 LastUpdatedAt = DateTime.UtcNow,
                 SaleStatus = SaleStatus.Pending,
                 Condition = dto.Condition,
-
-                ImageBlob = processedPhoto.ImageBytes ?? [],
-                ImageContentType = "image/jpeg",
-
-
+                ImageBlob = [],
+                ImageContentType = dto.Photo.ContentType,
             };
+
+
             if (!string.IsNullOrEmpty(dto.Subject))
             {
                 var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == dto.Subject);
@@ -353,6 +281,9 @@ namespace pslib_market.Server.Controller
 
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
+
+            await imageQueue.EnqueueAsync(new ImageProcessingJob(book.Id, rawImageBytes, dto.Photo.ContentType));
+
 
             AddBookActivityLog(
                 book.Id,
@@ -388,7 +319,6 @@ namespace pslib_market.Server.Controller
 
             return CreatedAtAction(nameof(GetBooks), new { id = book.Id }, book);
         }
-
         [HttpGet("pending")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetPendingBooks()
@@ -488,9 +418,9 @@ namespace pslib_market.Server.Controller
         {
             var userId = GetCurrentUserId();
             var userEmail = GetCurrentUserEmail();
-            var userName = GetCurrentUserName();
+            var userNameRaw = GetCurrentUserName();
 
-            userName = ResolveUserName(userName, userEmail, fallback: string.Empty);
+            var userName = BookHelpers.ResolveUserName(userNameRaw, userEmail, fallback: string.Empty);
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -558,7 +488,7 @@ namespace pslib_market.Server.Controller
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBook(int id, [FromForm] CreateBookDTO dto)
+        public async Task<IActionResult> UpdateBook(int id, [FromForm] CreateBookDTO dto, [FromServices] ImageProcessingQueue imageQueue)
         {
             var book = await _context.Books
                 .Include(b => b.Tags)
@@ -630,13 +560,16 @@ namespace pslib_market.Server.Controller
             }
             if (dto.Photo != null && dto.Photo.Length > 0)
             {
-                var processedPhoto = await ProcessUploadedPhotoAsync(dto.Photo);
-                if (!string.IsNullOrEmpty(processedPhoto.ErrorMessage))
+                if (!BookHelpers.IsSupportedPhotoUpload(dto.Photo.ContentType, dto.Photo.FileName))
                 {
-                    return BadRequest(processedPhoto.ErrorMessage);
+                    return BadRequest("Nepodporovaný formát fotky.");
                 }
 
-                book.ImageBlob = processedPhoto.ImageBytes ?? [];
+                using var memoryStream = new MemoryStream();
+                await dto.Photo.CopyToAsync(memoryStream);
+                var rawImageBytes = memoryStream.ToArray();
+
+                await imageQueue.EnqueueAsync(new ImageProcessingJob(book.Id, rawImageBytes, dto.Photo.ContentType));
             }
 
             if (hasModeratedChanges)

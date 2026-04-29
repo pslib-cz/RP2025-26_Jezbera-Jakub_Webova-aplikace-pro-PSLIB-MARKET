@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
 import plugin from '@vitejs/plugin-react';
@@ -23,6 +24,11 @@ export default defineConfig(({ mode }) => {
                     secure: false
                 }
             }
-        }
+        },
+        test: {
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: ['./src/test/setup.ts'],
+        },
     };
 });
