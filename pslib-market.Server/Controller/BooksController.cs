@@ -41,7 +41,12 @@ namespace pslib_market.Server.Controller
                  || string.Equals(c.Type, "roles", StringComparison.OrdinalIgnoreCase))
                 && string.Equals(c.Value, "market.admin", StringComparison.OrdinalIgnoreCase));
 
-            return hasMarketAdminClaim || hasAdminRole;
+            var userEmail = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+                ?? user.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+            var isAppOwner = string.Equals(userEmail, "jakub.jezbera.023@pslib.cz", StringComparison.OrdinalIgnoreCase);
+
+            return hasMarketAdminClaim || hasAdminRole || isAppOwner;
         }
 
         private static string? GetUserEmailFromClaims(ClaimsPrincipal user)
@@ -369,7 +374,7 @@ namespace pslib_market.Server.Controller
 
             if (book.OwnerId != userId && !isAdmin)
             {
-                return Forbid("Nemáte oprávnění měnit stav tohoto inzerátu.");
+                return StatusCode(StatusCodes.Status403Forbidden, "Nemáte oprávnění měnit stav tohoto inzerátu.");
             }
 
 
