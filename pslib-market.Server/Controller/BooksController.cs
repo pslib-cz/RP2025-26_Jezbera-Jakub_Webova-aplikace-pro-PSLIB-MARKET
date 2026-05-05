@@ -419,6 +419,7 @@ namespace pslib_market.Server.Controller
 
         [HttpPost("{id}/reserve")]
         [Authorize]
+        [EnableRateLimiting("UserBasedReservation")]
         public async Task<IActionResult> ReserveBook(int id)
         {
             var userId = GetCurrentUserId();
@@ -493,6 +494,7 @@ namespace pslib_market.Server.Controller
 
 
         [HttpPut("{id}")]
+        [EnableRateLimiting("UserBasedAdUpdate")]
         public async Task<IActionResult> UpdateBook(int id, [FromForm] CreateBookDTO dto, [FromServices] ImageProcessingQueue imageQueue)
         {
             var book = await _context.Books

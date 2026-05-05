@@ -85,14 +85,41 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     options.AddPolicy("UserBasedAdCreation", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
+        RateLimitPartition.GetSlidingWindowLimiter(
             partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
                           ?? httpContext.Request.Headers.Host.ToString(),
-            factory: partition => new FixedWindowRateLimiterOptions
+            factory: partition => new SlidingWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
                 PermitLimit = 1, 
-                Window = TimeSpan.FromSeconds(30), 
+                Window = TimeSpan.FromSeconds(30),
+                SegmentsPerWindow = 3,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("UserBasedReservation", httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+                          ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new SlidingWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                Window = TimeSpan.FromSeconds(60),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("UserBasedAdUpdate", httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+                          ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new SlidingWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3,
+                Window = TimeSpan.FromSeconds(120),
+                SegmentsPerWindow = 4,
                 QueueLimit = 0
             }));
 });
@@ -114,6 +141,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 app.UseCors();
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
