@@ -30,6 +30,7 @@
     width: 100%;
     object-fit: cover;
     border-radius: 1rem 1rem 0 0;
+    max-height: 350px;
 }
 
 .cardWrap {
