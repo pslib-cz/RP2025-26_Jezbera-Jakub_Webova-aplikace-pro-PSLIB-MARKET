@@ -183,7 +183,6 @@ const AdForm = ({ initialData }: AdFormProps) => {
       }
     }
     
-    // ... zbytek tvého kódu (zpracování fotky, fetch na API atd.) ...
 
     const selectedPhoto = data.photo?.[0];
 

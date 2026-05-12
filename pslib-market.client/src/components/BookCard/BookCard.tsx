@@ -87,6 +87,20 @@ const BookCard: React.FC<BookCardProps> = ({
       setInterestError("Chyba při změně stavu. Zkuste to znovu.");
     }
   };
+  const handleEditClick = () => {
+    navigate(`/upravit-inzerat/${id}`, {
+      state: {
+        initialData: {
+          id,
+          title,
+          description,
+          price,
+          condition,
+          tags,
+        },
+      },
+    });
+  };
 
   let interestButtonText = "Mám zájem";
   if (isOwnedByCurrentUser) interestButtonText = "Vlastní inzerát";
@@ -179,7 +193,7 @@ const BookCard: React.FC<BookCardProps> = ({
               </span>
               <button
                 type="button"
-                onClick={() => navigate(`/upravit-inzerat/${id}`)}
+                onClick={handleEditClick}
                 className={styles.adminPanelEdit}
               >
                 <svg

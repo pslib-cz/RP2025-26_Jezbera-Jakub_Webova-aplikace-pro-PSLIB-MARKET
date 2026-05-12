@@ -151,6 +151,9 @@
 }
 
 
+.descriptionField textarea.input {
+  resize: none;
+}
 
 @media (min-width: 920px) {
 	.form {
