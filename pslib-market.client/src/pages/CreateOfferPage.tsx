@@ -13,11 +13,19 @@ type CreateOfferLocationState = {
     price?: number | string
     description?: string
   }
+  initialData?: {
+    id: number
+    title?: string
+    tags?: Tag[]
+    condition?: number | string
+    price?: number | string
+    description?: string
+  }
 }
 
 const CreateOfferPage = () => {
   const location = useLocation() as { state?: CreateOfferLocationState }
-  const initialData = location.state?.book
+  const initialData = location.state?.book ?? location.state?.initialData
 
   useEffect(() => {
     document.title = initialData ? 'Upravit inzerát | PSLIB Market' : 'Vytvořit inzerát | PSLIB Market'
