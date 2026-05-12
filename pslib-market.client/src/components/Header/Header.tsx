@@ -128,7 +128,7 @@ const Header = () => {
         >
           <img
             className={styles.logo}
-            src="/logo.svg"
+            src="/logo.png"
             alt="Logo aplikace PSLIB Market"
             width="60"
             height="50"

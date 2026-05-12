@@ -5,6 +5,9 @@ import FlashMessage from '../components/FlashMessage'
 import { getAuditLogs } from '../services/apiService'
 import type { BookActivityLog } from '../types/models'
 import styles from './AuditLogPage.module.css'
+import Button from '../components/Button'
+
+const ITEMS_PER_PAGE = 10
 
 const hasAdminAccess = (profile: Record<string, unknown> | undefined): boolean => {
   if (!profile) return false
@@ -13,16 +16,21 @@ const hasAdminAccess = (profile: Record<string, unknown> | undefined): boolean =
   return claimValues.some((value) => value === 1 || value === '1')
 }
 
-const truncateTitle = (title: string) => 
+const truncateTitle = (title: string) =>
   title.length > 20 ? `${title.slice(0, 17)}...` : title;
 
 const AuditLogPage = () => {
   const auth = useAuth()
   const [logs, setLogs] = useState<BookActivityLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null) 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const isAdmin = auth.isAuthenticated && hasAdminAccess(auth.user?.profile as Record<string, unknown> | undefined)
+
+  const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedLogs = logs.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
   useEffect(() => {
     document.title = 'Audit log | PSLIB Market'
@@ -39,6 +47,7 @@ const AuditLogPage = () => {
       try {
         const data = await getAuditLogs(token)
         setLogs(data)
+        setCurrentPage(1)
       } catch (error) {
         setErrorMsg('Nepodařilo se načíst audit log. ' + (error instanceof Error ? error.message : ''))
       } finally {
@@ -76,34 +85,57 @@ const AuditLogPage = () => {
       ) : logs.length === 0 ? (
         <p>Zatím tu nejsou žádné záznamy.</p>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Čas</th>
-                <th>Uživatel</th>
-                <th>Akce</th>
-                <th>Inzerát</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id}>
-                  <td>{new Date(log.timeStamp).toLocaleString('cs-CZ')}</td>
-                  <td>{log.userId || 'Neznámý uživatel'}</td>
-                  <td>{log.action}</td>
-                  <td title={log.book?.title || `#${log.bookId}`}>
-                    {log.book?.title
-                      ? `${truncateTitle(log.book.title)} (#${log.bookId})`
-                      : `#${log.bookId}`}
-                  </td>
-                  <td>{log.details || '-'}</td>
+        <>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Čas</th>
+                  <th>Uživatel</th>
+                  <th>Akce</th>
+                  <th>Inzerát</th>
+                  <th>Detail</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>{new Date(log.timeStamp).toLocaleString('cs-CZ')}</td>
+                    <td>{log.userId || 'Neznámý uživatel'}</td>
+                    <td>{log.action}</td>
+                    <td title={log.book?.title || `#${log.bookId}`}>
+                      {log.book?.title
+                        ? `${truncateTitle(log.book.title)} (#${log.bookId})`
+                        : `#${log.bookId}`}
+                    </td>
+                    <td>{log.details || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className={styles.pagination}>
+              <Button
+                text="Předchozí"
+                variant="secondary"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              />
+              <span className={styles.paginationInfo}>
+                Stránka {currentPage} z {totalPages}
+              </span>
+              <Button
+                text="Další"
+                variant="secondary"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              />
+            </div>
+          )}
+
+        </>
       )}
     </main>
   )
