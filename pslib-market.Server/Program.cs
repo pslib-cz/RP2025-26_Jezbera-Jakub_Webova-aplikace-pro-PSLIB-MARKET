@@ -8,7 +8,6 @@ using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using System.Security.Claims;
 using SixLabors.ImageSharp;
 using pslib_market.Server.Services.ImageProcessing;
 
@@ -30,12 +29,7 @@ static bool HasAdminAccess(ClaimsPrincipal user)
          || string.Equals(c.Type, "roles", StringComparison.OrdinalIgnoreCase))
         && string.Equals(c.Value, "market.admin", StringComparison.OrdinalIgnoreCase));
 
-    var userEmail = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-        ?? user.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-    var isAppOwner = string.Equals(userEmail, "jakub.jezbera.023@pslib.cz", StringComparison.OrdinalIgnoreCase);
-
-    return hasMarketAdminClaim || hasAdminRole || isAppOwner;
+    return hasMarketAdminClaim || hasAdminRole;
 }
 
 // Add services to the container.

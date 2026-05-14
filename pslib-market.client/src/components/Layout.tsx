@@ -3,17 +3,6 @@ import Header from './Header/Header';
 import { Outlet } from 'react-router-dom';
 
 const Layout = () => {
-    // if (auth.isLoading) return <div>Načítám...</div>;
-    // if (!auth.isAuthenticated) {
-    //     return (
-    //         <div className={styles.loginPrompt}>
-    //             <h2>Vítejte v PSLIB Marketu</h2>
-    //             <p>Pro zobrazení inzerátů se musíte přihlásit svým školním účtem.</p>
-    //             <button onClick={() => auth.signinRedirect()}>Přihlásit se</button>
-    //         </div>
-    //     )
-    // }
-
   return (
     <div className={styles.App__container}>
         <Header />
