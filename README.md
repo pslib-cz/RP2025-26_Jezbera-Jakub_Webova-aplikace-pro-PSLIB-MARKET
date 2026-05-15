@@ -1,4 +1,5 @@
 #  PSLIB Market
+## Aplikace je hotová!
 
 PSLIB Market je moderní webová aplikace určená pro studenty, která zprostředkovává jednoduchý a bezpečný nákup a prodej použitých učebnic 
 
