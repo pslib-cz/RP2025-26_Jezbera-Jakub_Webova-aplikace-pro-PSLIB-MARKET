@@ -174,6 +174,19 @@
   align-items: start;
 }
 
+.paginationWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.paginationInfo {
+  font-size: 0.9rem;
+  color: #666;
+}
+
 .statePanel {
   margin: 1.5rem 0;
   padding: 1.5rem;

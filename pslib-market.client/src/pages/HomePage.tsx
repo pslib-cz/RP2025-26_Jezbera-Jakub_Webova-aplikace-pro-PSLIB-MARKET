@@ -429,16 +429,7 @@ const HomePage = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div
-                    className={styles.paginationWrapper}
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: "1rem",
-                      marginTop: "2rem",
-                    }}
-                  >
+                  <div className={styles.paginationWrapper}>
                     <Button
                       text="Předchozí"
                       variant="secondary"
@@ -447,7 +438,7 @@ const HomePage = () => {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                     />
-                    <span style={{ fontSize: "0.9rem", color: "#666" }}>
+                    <span className={styles.paginationInfo}>
                       Stránka {currentPage} z {totalPages}
                     </span>
                     <Button

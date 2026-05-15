@@ -5,6 +5,8 @@ using pslib_market.Server.Data;
 using pslib_market.Server.Services;
 using Scalar.AspNetCore;
 using System.Security.Claims;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -12,16 +14,35 @@ using SixLabors.ImageSharp;
 using pslib_market.Server.Services.ImageProcessing;
 
 var builder = WebApplication.CreateBuilder(args);
+var adminClaimName = builder.Configuration["OAuth:ClaimAdmin"] ?? "market.admin";
 
-static bool HasAdminAccess(ClaimsPrincipal user)
+static bool IsTruthyClaimValue(string? value)
 {
-    static bool IsAdminValue(string value)
-        => string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return false;
+    }
 
+    return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsTruthyJsonValue(JsonElement value)
+{
+    return value.ValueKind switch
+    {
+        JsonValueKind.True => true,
+        JsonValueKind.Number => value.TryGetInt32(out var number) && number == 1,
+        JsonValueKind.String => IsTruthyClaimValue(value.GetString()),
+        _ => false
+    };
+}
+
+static bool HasAdminAccess(ClaimsPrincipal user, string claimName)
+{
     var hasMarketAdminClaim = user.Claims.Any(c =>
-        string.Equals(c.Type, "market.admin", StringComparison.OrdinalIgnoreCase)
-        && IsAdminValue(c.Value));
+        string.Equals(c.Type, claimName, StringComparison.OrdinalIgnoreCase)
+        && IsTruthyClaimValue(c.Value));
 
     var hasAdminRole = user.Claims.Any(c =>
         (string.Equals(c.Type, ClaimTypes.Role, StringComparison.OrdinalIgnoreCase)
@@ -53,9 +74,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Sandbox")));
 builder.Services.AddSingleton<EmailService>();
+builder.Services.AddHttpClient();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => HasAdminAccess(context.User)));
+    options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => HasAdminAccess(context.User, adminClaimName)));
 });
 
 
@@ -67,9 +89,78 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.Authority = authority;
         options.Audience = "market";
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateAudience = false 
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal;
+                if (principal?.Identity is not ClaimsIdentity identity)
+                {
+                    return;
+                }
+
+                if (principal.Claims.Any(c =>
+                        string.Equals(c.Type, adminClaimName, StringComparison.OrdinalIgnoreCase) &&
+                        IsTruthyClaimValue(c.Value)))
+                {
+                    return;
+                }
+
+                var authorizationHeader = context.Request.Headers.Authorization.ToString();
+                if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                var accessToken = authorizationHeader["Bearer ".Length..].Trim();
+                if (string.IsNullOrWhiteSpace(accessToken))
+                {
+                    return;
+                }
+
+                try
+                {
+                    var httpClientFactory = context.HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
+                    var httpClient = httpClientFactory.CreateClient();
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    var userInfoUri = new Uri(new Uri(authority!.TrimEnd('/') + "/"), "connect/userinfo");
+                    using var userInfoResponse = await httpClient.GetAsync(userInfoUri);
+
+                    if (!userInfoResponse.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+
+                    await using var userInfoStream = await userInfoResponse.Content.ReadAsStreamAsync();
+                    using var userInfoJson = await JsonDocument.ParseAsync(userInfoStream);
+
+                    if (!userInfoJson.RootElement.TryGetProperty(adminClaimName, out var adminClaimValue))
+                    {
+                        return;
+                    }
+
+                    if (!IsTruthyJsonValue(adminClaimValue))
+                    {
+                        return;
+                    }
+
+                    if (!identity.HasClaim(c => string.Equals(c.Type, adminClaimName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        identity.AddClaim(new Claim(adminClaimName, "true"));
+                    }
+                }
+                catch
+                {
+                    return;
+                }
+            }
         };
     });
 

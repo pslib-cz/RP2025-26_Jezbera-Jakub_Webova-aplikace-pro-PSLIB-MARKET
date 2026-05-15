@@ -25,15 +25,17 @@ namespace pslib_market.Server.Controller
         private readonly ILogger<BooksController> _logger;
         private readonly IConfiguration _configuration;
 
-        private static bool HasAdminAccess(ClaimsPrincipal user)
+        private string GetAdminClaimName()
         {
-            static bool IsAdminValue(string value)
-                => string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+            return _configuration["OAuth:ClaimAdmin"] ?? "market.admin";
+        }
 
+        private bool HasAdminAccess(ClaimsPrincipal user)
+        {
             var hasMarketAdminClaim = user.Claims.Any(c =>
-                string.Equals(c.Type, "market.admin", StringComparison.OrdinalIgnoreCase)
-                && IsAdminValue(c.Value));
+                string.Equals(c.Type, GetAdminClaimName(), StringComparison.OrdinalIgnoreCase)
+                && (string.Equals(c.Value, "1", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase)));
 
             var hasAdminRole = user.Claims.Any(c =>
                 (string.Equals(c.Type, ClaimTypes.Role, StringComparison.OrdinalIgnoreCase)
