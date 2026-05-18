@@ -19,10 +19,84 @@ const createAuthHeaders = (token?: string): HeadersInit => {
   return { Authorization: `Bearer ${token}` };
 };
 
-export const getBooks = async (token?: string): Promise<Book[]> => {
-  const response = await fetch(`${API_BASE_URL}/books`, {
-    headers: createAuthHeaders(token),
-  });
+export type BooksPageResponse = {
+  items: Book[];
+  filteredCount: number;
+  visibleCount: number;
+  minPrice: number;
+  maxPrice: number;
+  page: number;
+  pageSize: number;
+};
+
+export type PagedResponse<T> = {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+};
+
+export type BooksQueryParams = {
+  token?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  subjects?: string[];
+  conditions?: number[];
+  saleStatuses?: string[];
+  sort?: string;
+};
+
+export type AuditLogQueryParams = {
+  token: string;
+  page?: number;
+  pageSize?: number;
+};
+
+const appendValues = (
+  queryParams: URLSearchParams,
+  key: string,
+  values?: Array<string | number>,
+) => {
+  values?.forEach((value) => queryParams.append(key, String(value)));
+};
+
+export const getBooks = async (
+  params: BooksQueryParams = {},
+): Promise<BooksPageResponse> => {
+  const queryParams = new URLSearchParams();
+
+  if (params.page != null) {
+    queryParams.set("page", String(params.page));
+  }
+  if (params.pageSize != null) {
+    queryParams.set("pageSize", String(params.pageSize));
+  }
+  if (params.search?.trim()) {
+    queryParams.set("search", params.search.trim());
+  }
+  if (params.minPrice != null) {
+    queryParams.set("minPrice", String(params.minPrice));
+  }
+  if (params.maxPrice != null) {
+    queryParams.set("maxPrice", String(params.maxPrice));
+  }
+  appendValues(queryParams, "subjects", params.subjects);
+  appendValues(queryParams, "conditions", params.conditions);
+  appendValues(queryParams, "saleStatuses", params.saleStatuses);
+  if (params.sort?.trim()) {
+    queryParams.set("sort", params.sort.trim());
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/books${queryParams.toString() ? `?${queryParams.toString()}` : ""}`,
+    {
+      headers: createAuthHeaders(params.token),
+      credentials: "include",
+    },
+  );
 
   if (!response.ok) {
     throw new Error("Nepodařilo se stáhnout inzeráty z backendu.");
@@ -34,10 +108,11 @@ export const getBooks = async (token?: string): Promise<Book[]> => {
 export const getMyBooks = async (token: string): Promise<Book[]> => {
   const response = await fetch(`${API_BASE_URL}/books/my`, {
     headers: createAuthHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
-    throw new Error("Nepodařilo se stáhnout vaše inzeráty z backendu.");
+    throw new Error("Nepodařilo se stáhnout inzeráty z backendu.");
   }
 
   return await response.json();
@@ -54,6 +129,7 @@ export const changeBookSaleStatus = async (
       ...createAuthHeaders(token),
       "Content-Type": "application/json",
     },
+      credentials: "include",
     body: JSON.stringify(newStatus),
   });
 
@@ -69,6 +145,7 @@ export const approveBook = async (
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/approve`, {
     method: "PATCH",
     headers: createAuthHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -84,6 +161,7 @@ export const rejectBook = async (
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/reject`, {
     method: "PATCH",
     headers: createAuthHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -95,6 +173,7 @@ export const rejectBook = async (
 export const getPendingBooks = async (token: string): Promise<Book[]> => {
   const response = await fetch(`${API_BASE_URL}/books/pending`, {
     headers: createAuthHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -111,6 +190,7 @@ export const reserveBook = async (
   const response = await fetch(`${API_BASE_URL}/books/${bookId}/reserve`, {
     method: "POST",
     headers: createAuthHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -120,11 +200,24 @@ export const reserveBook = async (
 };
 
 export const getAuditLogs = async (
-  token: string,
-): Promise<BookActivityLog[]> => {
-  const response = await fetch(`${API_BASE_URL}/auditlog`, {
-    headers: createAuthHeaders(token),
-  });
+  params: AuditLogQueryParams,
+): Promise<PagedResponse<BookActivityLog>> => {
+  const queryParams = new URLSearchParams();
+
+  if (params.page != null) {
+    queryParams.set("page", String(params.page));
+  }
+  if (params.pageSize != null) {
+    queryParams.set("pageSize", String(params.pageSize));
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/auditlog${queryParams.toString() ? `?${queryParams.toString()}` : ""}`,
+    {
+      headers: createAuthHeaders(params.token),
+      credentials: "include",
+    },
+  );
 
   if (!response.ok) {
     const errorMessage = await response.text();
@@ -135,10 +228,13 @@ export const getAuditLogs = async (
 };
 
 export const getTags = async (): Promise<Tag[]> => {
-  const response = await fetch(`${API_BASE_URL}/tags`);
+  const response = await fetch(`${API_BASE_URL}/tags`, {
+    credentials: "include",
+  });
 
   if (!response.ok) {
-    throw new Error("Nepodařilo se stáhnout předměty z backendu.");
+    const errorMessage = await response.text();
+    throw new Error(errorMessage || "Nepodařilo se načíst audit log.");
   }
 
   return await response.json();
@@ -154,6 +250,7 @@ export const createTag = async (
       ...createAuthHeaders(token),
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(tagData),
   });
 
@@ -176,6 +273,7 @@ export const updateTag = async (
         ...createAuthHeaders(token),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(tagData),
     },
   );
@@ -192,6 +290,7 @@ export const deleteTag = async (name: string, token: string): Promise<void> => {
     {
       method: "DELETE",
       headers: createAuthHeaders(token),
+      credentials: "include",
     },
   );
 

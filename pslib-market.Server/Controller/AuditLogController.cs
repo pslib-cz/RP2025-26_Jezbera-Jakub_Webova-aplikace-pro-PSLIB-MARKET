@@ -20,14 +20,34 @@ namespace pslib_market.Server.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookActivityLog>>> GetLogs()
+        public async Task<ActionResult<PagedResult<BookActivityLog>>> GetLogs(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var logs = await _context.BookActivityLogs
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            page = Math.Max(page, 1);
+
+            var query = _context.BookActivityLogs
                 .Include(log => log.Book)
+                .AsQueryable();
+
+            var totalCount = await query.CountAsync();
+            var totalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize);
+            page = Math.Min(page, totalPages);
+
+            var logs = await query
                 .OrderByDescending(log => log.TimeStamp)
-                .Take(100)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
-            return Ok(logs);
+
+            return Ok(new PagedResult<BookActivityLog>
+            {
+                Items = logs,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            });
         }
 
 

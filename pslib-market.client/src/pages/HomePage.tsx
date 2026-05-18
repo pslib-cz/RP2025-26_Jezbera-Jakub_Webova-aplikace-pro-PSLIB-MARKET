@@ -21,13 +21,6 @@ type FlashMessageState = {
   flashType?: FlashMessageType;
 };
 
-const STATUS_AVAILABLE = 0;
-const STATUS_RESERVED = 1;
-const STATUS_SOLD = 2;
-const STATUS_ARCHIVED = 3;
-const STATUS_PENDING = 4;
-const STATUS_REJECTED = 5;
-
 const ITEMS_PER_PAGE = 12;
 
 const hasAdminAccess = (
@@ -85,6 +78,11 @@ const HomePage = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [filteredCount, setFilteredCount] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [minAvailablePrice, setMinAvailablePrice] = useState(0);
+  const [maxAvailablePrice, setMaxAvailablePrice] = useState(0);
+  const searchQuery = (searchParams.get("q") ?? "").trim();
 
   const loadData = useCallback(async () => {
     if (auth.isLoading) return;
@@ -93,10 +91,25 @@ const HomePage = () => {
     setLoadError(null);
     try {
       const [booksData, tagsData] = await Promise.all([
-        getBooks(auth.user?.access_token),
+        getBooks({
+          token: auth.user?.access_token,
+          page: currentPage,
+          pageSize: ITEMS_PER_PAGE,
+          search: searchQuery,
+          minPrice: appliedFilters.minPrice,
+          maxPrice: appliedFilters.maxPrice,
+          subjects: appliedFilters.subjects,
+          conditions: appliedFilters.conditions,
+          saleStatuses: appliedFilters.saleStatuses,
+          sort: sortOption,
+        }),
         getTags(),
       ]);
-      setBooks(booksData);
+      setBooks(booksData.items);
+      setFilteredCount(booksData.filteredCount);
+      setVisibleCount(booksData.visibleCount);
+      setMinAvailablePrice(booksData.minPrice);
+      setMaxAvailablePrice(booksData.maxPrice);
       setAllTags(tagsData);
     } catch (error) {
       setLoadError(
@@ -105,12 +118,23 @@ const HomePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [auth.isLoading, auth.user?.access_token]);
+  }, [
+    appliedFilters,
+    auth.isLoading,
+    auth.user?.access_token,
+    currentPage,
+    searchQuery,
+    sortOption,
+  ]);
 
   useEffect(() => {
     document.title = "Nabídka knih | PSLIB Market";
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     const state = location.state as FlashMessageState | null;
@@ -127,31 +151,6 @@ const HomePage = () => {
       document.body.style.overflow = originalOverflow;
     };
   }, [isMobileFilterOpen, isMobileSortOpen]);
-
-  const normalizeSearchText = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-  const searchQuery = normalizeSearchText((searchParams.get("q") ?? "").trim());
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, appliedFilters, sortOption]);
-
-  const filteredBooks = !searchQuery
-    ? books
-    : books.filter((book) => {
-        const searchableValues = [
-          book.title,
-          book.description ?? "",
-          book.ownerName,
-          (book.tags ?? []).map((t) => t.name).join(" "),
-        ];
-        return searchableValues.some((value) =>
-          normalizeSearchText(value).includes(searchQuery),
-        );
-      });
 
   const filtersIcon = (
     <svg
@@ -194,107 +193,21 @@ const HomePage = () => {
   const normalizedCurrentUserEmail = String(auth.user?.profile?.email ?? "")
     .trim()
     .toLowerCase();
+  const totalPages = Math.ceil(filteredCount / ITEMS_PER_PAGE);
 
-  const minAvailablePrice =
-    books.length > 0 ? Math.min(...books.map((book) => book.price)) : 0;
-  const maxAvailablePrice =
-    books.length > 0 ? Math.max(...books.map((book) => book.price)) : 1000;
-
-  const filterMatchedBooks = filteredBooks.filter((book) => {
-    if (appliedFilters.minPrice != null && book.price < appliedFilters.minPrice)
-      return false;
-    if (appliedFilters.maxPrice != null && book.price > appliedFilters.maxPrice)
-      return false;
-
-    if (appliedFilters.subjects.length > 0) {
-      const hasSelectedSubject = (book.tags ?? []).some((tag) =>
-        appliedFilters.subjects.includes(tag.name),
-      );
-      if (!hasSelectedSubject) return false;
-    }
-
-    if (appliedFilters.conditions.length > 0) {
-      const numericCondition =
-        typeof book.condition === "string"
-          ? parseInt(book.condition, 10)
-          : book.condition;
-      if (
-        typeof numericCondition !== "number" ||
-        !appliedFilters.conditions.includes(numericCondition)
-      )
-        return false;
-    }
-
-    if (appliedFilters.saleStatuses.length > 0) {
-      const matchesAnyStatus = appliedFilters.saleStatuses.some(
-        (selectedStatus) => {
-          if (selectedStatus === "available")
-            return book.saleStatus === STATUS_AVAILABLE;
-          if (selectedStatus === "reserved")
-            return book.saleStatus === STATUS_RESERVED;
-          if (selectedStatus === "sold") return book.saleStatus === STATUS_SOLD;
-          if (selectedStatus === "pending")
-            return book.saleStatus === STATUS_PENDING;
-          if (selectedStatus === "rejected")
-            return book.saleStatus === STATUS_REJECTED;
-
-          if (selectedStatus === "reservedByMe") {
-            return (book.reservations ?? []).some(
-              (reservation) =>
-                reservation.reservedByUserEmail?.trim().toLowerCase() ===
-                normalizedCurrentUserEmail,
-            );
-          }
-          return false;
-        },
-      );
-
-      if (!matchesAnyStatus) return false;
-    } else {
-      if (
-        !isAdmin &&
-        [
-          STATUS_ARCHIVED,
-          STATUS_SOLD,
-          STATUS_PENDING,
-          STATUS_REJECTED,
-        ].includes(book.saleStatus)
-      ) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
-  const getCreationTimestamp = (book: Book): number => {
-    const parsedDate = book.createdAt
-      ? new Date(book.createdAt).getTime()
-      : Number.NaN;
-    return Number.isFinite(parsedDate) ? parsedDate : book.id;
+  const handleApplyFilters = (filters: SidebarFilters) => {
+    setCurrentPage(1);
+    setAppliedFilters(filters);
   };
 
-  const sortedBooks = [...filterMatchedBooks].sort((left, right) => {
-    if (sortOption === "priceAsc") return left.price - right.price;
-    if (sortOption === "priceDesc") return right.price - left.price;
-    if (sortOption === "newest")
-      return getCreationTimestamp(right) - getCreationTimestamp(left);
-    return getCreationTimestamp(left) - getCreationTimestamp(right);
-  });
+  const handleSortChange = (nextSort: SortOption) => {
+    setCurrentPage(1);
+    setSortOption(nextSort);
+  };
 
-  const totalPages = Math.ceil(sortedBooks.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedBooks = sortedBooks.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE,
-  );
-
-  const hasNoBooksAtAll = !isLoading && !loadError && books.length === 0;
+  const hasNoBooksAtAll = !isLoading && !loadError && visibleCount === 0;
   const hasNoSearchResults =
-    !isLoading &&
-    !loadError &&
-    books.length > 0 &&
-    filterMatchedBooks.length === 0;
+    !isLoading && !loadError && visibleCount > 0 && filteredCount === 0;
 
   return (
     <main className={styles.page}>
@@ -358,11 +271,11 @@ const HomePage = () => {
               minAvailablePrice={minAvailablePrice}
               maxAvailablePrice={maxAvailablePrice}
               subjectOptions={allTags}
-              visibleCount={filterMatchedBooks.length}
-              totalCount={filteredBooks.length}
+              visibleCount={filteredCount}
+              totalCount={visibleCount}
               appliedFilters={appliedFilters}
               isAdmin={isAdmin}
-              onApplyFilters={setAppliedFilters}
+              onApplyFilters={handleApplyFilters}
             />
           </div>
 
@@ -388,14 +301,14 @@ const HomePage = () => {
             <div className={`${styles.toolbarRow} ${styles.desktopSortRow}`}>
               <SortButtons
                 selectedSort={sortOption}
-                onSortChange={setSortOption}
+                onSortChange={handleSortChange}
               />
             </div>
 
-            {paginatedBooks.length > 0 && (
+            {books.length > 0 && (
               <>
                 <div className={styles.bookGrid}>
-                  {paginatedBooks.map((book) => {
+                  {books.map((book) => {
                     const isReservedByCurrentUser = (
                       book.reservations ?? []
                     ).some(
@@ -475,11 +388,11 @@ const HomePage = () => {
               minAvailablePrice={minAvailablePrice}
               maxAvailablePrice={maxAvailablePrice}
               subjectOptions={allTags}
-              visibleCount={filterMatchedBooks.length}
-              totalCount={filteredBooks.length}
+              visibleCount={filteredCount}
+              totalCount={visibleCount}
               appliedFilters={appliedFilters}
               isAdmin={isAdmin}
-              onApplyFilters={setAppliedFilters}
+              onApplyFilters={handleApplyFilters}
               onCloseMobile={() => setIsMobileFilterOpen(false)}
             />
           </div>
@@ -507,7 +420,7 @@ const HomePage = () => {
                   type="button"
                   className={`${styles.mobileSortOption} ${sortOption === option.value ? styles.mobileSortOptionActive : ""}`.trim()}
                   onClick={() => {
-                    setSortOption(option.value);
+                    handleSortChange(option.value);
                     setIsMobileSortOpen(false);
                   }}
                 >

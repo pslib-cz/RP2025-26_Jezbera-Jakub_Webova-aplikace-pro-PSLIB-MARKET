@@ -46,13 +46,21 @@ describe('getBooks', () => {
   it('vrátí seznam knih při úspěšném response', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => [mockBook],
+      json: async () => ({
+        items: [mockBook],
+        filteredCount: 1,
+        visibleCount: 1,
+        minPrice: 150,
+        maxPrice: 150,
+        page: 1,
+        pageSize: 12,
+      }),
     })
 
-    const books = await getBooks(TOKEN)
+    const books = await getBooks({ token: TOKEN, page: 1, pageSize: 12 })
 
-    expect(books).toHaveLength(1)
-    expect(books[0].title).toBe('Matematika pro SŠ')
+    expect(books.items).toHaveLength(1)
+    expect(books.items[0].title).toBe('Matematika pro SŠ')
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/books'),
       expect.objectContaining({
@@ -64,17 +72,25 @@ describe('getBooks', () => {
   it('funguje i bez tokenu (veřejný endpoint)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
+      json: async () => ({
+        items: [],
+        filteredCount: 0,
+        visibleCount: 0,
+        minPrice: 0,
+        maxPrice: 0,
+        page: 1,
+        pageSize: 12,
+      }),
     })
 
-    const books = await getBooks()
-    expect(books).toHaveLength(0)
+    const books = await getBooks({ page: 1, pageSize: 12 })
+    expect(books.items).toHaveLength(0)
   })
 
   it('vyhodí chybu při neúspěšném response', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
 
-    await expect(getBooks(TOKEN)).rejects.toThrow()
+    await expect(getBooks({ token: TOKEN, page: 1, pageSize: 12 })).rejects.toThrow()
   })
 })
 

@@ -17,7 +17,7 @@ const hasAdminAccess = (profile: Record<string, unknown> | undefined): boolean =
 }
 
 const truncateTitle = (title: string) =>
-  title.length > 20 ? `${title.slice(0, 17)}...` : title;
+  title.length > 20 ? `${title.slice(0, 17)}...` : title
 
 const AuditLogPage = () => {
   const auth = useAuth()
@@ -25,12 +25,11 @@ const AuditLogPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
 
   const isAdmin = auth.isAuthenticated && hasAdminAccess(auth.user?.profile as Record<string, unknown> | undefined)
 
-  const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedLogs = logs.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
   useEffect(() => {
     document.title = 'Audit log | PSLIB Market'
@@ -45,9 +44,13 @@ const AuditLogPage = () => {
       }
 
       try {
-        const data = await getAuditLogs(token)
-        setLogs(data)
-        setCurrentPage(1)
+        const data = await getAuditLogs({
+          token,
+          page: currentPage,
+          pageSize: ITEMS_PER_PAGE,
+        })
+        setLogs(data.items)
+        setTotalCount(data.totalCount)
       } catch (error) {
         setErrorMsg('Nepodařilo se načíst audit log. ' + (error instanceof Error ? error.message : ''))
       } finally {
@@ -55,8 +58,9 @@ const AuditLogPage = () => {
       }
     }
 
+    setIsLoading(true)
     void loadLogs()
-  }, [auth.user?.access_token, isAdmin])
+  }, [auth.user?.access_token, currentPage, isAdmin])
 
   if (!auth.isAuthenticated || !isAdmin) {
     return (
@@ -82,7 +86,7 @@ const AuditLogPage = () => {
 
       {isLoading ? (
         <p>Načítám audit log...</p>
-      ) : logs.length === 0 ? (
+      ) : totalCount === 0 ? (
         <p>Zatím tu nejsou žádné záznamy.</p>
       ) : (
         <>
@@ -98,7 +102,7 @@ const AuditLogPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedLogs.map((log) => (
+                {logs.map((log) => (
                   <tr key={log.id}>
                     <td>{new Date(log.timeStamp).toLocaleString('cs-CZ')}</td>
                     <td>{log.userId || 'Neznámý uživatel'}</td>

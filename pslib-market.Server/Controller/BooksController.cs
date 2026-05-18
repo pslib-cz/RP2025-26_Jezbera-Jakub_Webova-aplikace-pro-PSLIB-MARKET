@@ -167,6 +167,101 @@ namespace pslib_market.Server.Controller
             return $"{body}\n\nOtevřít PSLIB Market: {targetUrl}";
         }
 
+        private static string NormalizeFilterValue(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().ToLowerInvariant();
+        }
+
+        private IQueryable<Book> ApplyVisibilityScope(IQueryable<Book> query, bool isAdmin, DateTime now)
+        {
+            if (isAdmin)
+            {
+                return query;
+            }
+
+            var oneMonthAgo = now.AddMonths(-1);
+            return query.Where(b =>
+                b.SaleStatus == SaleStatus.Available ||
+                (b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt >= oneMonthAgo));
+        }
+
+        private static IQueryable<Book> ApplyBookSort(IQueryable<Book> query, string sort)
+        {
+            return sort.ToLowerInvariant() switch
+            {
+                "priceasc" => query.OrderBy(b => b.Price).ThenByDescending(b => b.CreatedAt),
+                "pricedesc" => query.OrderByDescending(b => b.Price).ThenByDescending(b => b.CreatedAt),
+                "oldest" => query.OrderBy(b => b.CreatedAt).ThenBy(b => b.Id),
+                _ => query.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id),
+            };
+        }
+
+        private IQueryable<Book> ApplyBookFilters(
+            IQueryable<Book> query,
+            string? search,
+            decimal? minPrice,
+            decimal? maxPrice,
+            IReadOnlyCollection<string> subjects,
+            IReadOnlyCollection<int> conditions,
+            IReadOnlyCollection<string> saleStatuses,
+            string? currentUserEmail)
+        {
+            if (minPrice.HasValue)
+            {
+                query = query.Where(b => b.Price >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(b => b.Price <= maxPrice.Value);
+            }
+
+            if (subjects.Count > 0)
+            {
+                query = query.Where(b => b.Tags.Any(t => subjects.Contains(t.Name)));
+            }
+
+            if (conditions.Count > 0)
+            {
+                query = query.Where(b => conditions.Contains((int)b.Condition));
+            }
+
+            var normalizedSearch = NormalizeFilterValue(search);
+            if (!string.IsNullOrWhiteSpace(normalizedSearch))
+            {
+                query = query.Where(b =>
+                    (b.Title != null && b.Title.ToLower().Contains(normalizedSearch)) ||
+                    (b.Description != null && b.Description.ToLower().Contains(normalizedSearch)) ||
+                    (b.OwnerName != null && b.OwnerName.ToLower().Contains(normalizedSearch)) ||
+                    (b.OwnerEmail != null && b.OwnerEmail.ToLower().Contains(normalizedSearch)) ||
+                    b.Tags.Any(t => t.Name.ToLower().Contains(normalizedSearch)));
+            }
+
+            if (saleStatuses.Count > 0)
+            {
+                var normalizedStatuses = saleStatuses
+                    .Select(NormalizeFilterValue)
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .ToHashSet();
+                var normalizedEmail = NormalizeFilterValue(currentUserEmail);
+                var canUseReservedByMe = !string.IsNullOrWhiteSpace(normalizedEmail);
+
+                query = query.Where(b =>
+                    (normalizedStatuses.Contains("available") && b.SaleStatus == SaleStatus.Available) ||
+                    (normalizedStatuses.Contains("reserved") && b.SaleStatus == SaleStatus.Reserved) ||
+                    (normalizedStatuses.Contains("sold") && b.SaleStatus == SaleStatus.Sold) ||
+                    (normalizedStatuses.Contains("pending") && b.SaleStatus == SaleStatus.Pending) ||
+                    (normalizedStatuses.Contains("rejected") && b.SaleStatus == SaleStatus.Rejected) ||
+                    (normalizedStatuses.Contains("archived") && b.SaleStatus == SaleStatus.Archived) ||
+                    (normalizedStatuses.Contains("reservedbyme") && canUseReservedByMe &&
+                        b.SaleStatus == SaleStatus.Reserved &&
+                        b.Reservations.Any(r => r.ReservedByUserEmail.ToLower() == normalizedEmail)));
+            }
+
+            return query;
+        }
 
         public BooksController(
             ApplicationDbContext context,
@@ -179,29 +274,63 @@ namespace pslib_market.Server.Controller
             _logger = logger;
             _configuration = configuration;
         }
+
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<BookDto>>> GetBooks()
+        public async Task<ActionResult<BooksPageResponse>> GetBooks(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 12,
+            [FromQuery] string? search = null,
+            [FromQuery] decimal? minPrice = null,
+            [FromQuery] decimal? maxPrice = null,
+            [FromQuery(Name = "subjects")] List<string>? subjects = null,
+            [FromQuery(Name = "conditions")] List<int>? conditions = null,
+            [FromQuery(Name = "saleStatuses")] List<string>? saleStatuses = null,
+            [FromQuery] string sort = "newest")
         {
             var now = DateTime.UtcNow;
             await ArchiveExpiredReservedBooksAsync(now);
-            var oneMonthAgo = now.AddMonths(-1);
+
             var isAdmin = User.Identity?.IsAuthenticated == true && HasAdminAccess(User);
+            var visibleBooksQuery = ApplyVisibilityScope(
+                _context.Books
+                    .AsNoTracking()
+                    .Include(b => b.Tags)
+                    .Include(b => b.Reservations)
+                    .AsQueryable(),
+                isAdmin,
+                now);
 
-            var booksQuery = _context.Books
-                .Include(b => b.Tags)
-                .AsQueryable();
+            var visibleCount = await visibleBooksQuery.CountAsync();
+            var minVisiblePrice = visibleCount > 0
+                ? await visibleBooksQuery.MinAsync(book => book.Price)
+                : 0m;
+            var maxVisiblePrice = visibleCount > 0
+                ? await visibleBooksQuery.MaxAsync(book => book.Price)
+                : 0m;
 
-            if (!isAdmin)
-            {
-                booksQuery = booksQuery.Where(b =>
-                    b.SaleStatus == SaleStatus.Available ||
-                    (b.SaleStatus == SaleStatus.Reserved && b.LastUpdatedAt >= oneMonthAgo));
-            }
+            var filteredBooksQuery = ApplyBookFilters(
+                visibleBooksQuery,
+                search,
+                minPrice,
+                maxPrice,
+                subjects ?? [],
+                conditions ?? [],
+                saleStatuses ?? [],
+                GetCurrentUserEmail());
 
-            var books = await booksQuery
-                .OrderBy(b => b.SaleStatus == SaleStatus.Reserved ? 1 : 0)
-                .ThenByDescending(b => b.CreatedAt)
+            var filteredCount = await filteredBooksQuery.CountAsync();
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            page = Math.Max(page, 1);
+
+            var totalPages = filteredCount == 0
+                ? 1
+                : (int)Math.Ceiling(filteredCount / (double)pageSize);
+            page = Math.Min(page, totalPages);
+
+            var books = await ApplyBookSort(filteredBooksQuery, sort)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(b => new BookDto
                 {
                     Id = b.Id,
@@ -219,11 +348,28 @@ namespace pslib_market.Server.Controller
                     OwnerName = b.OwnerName,
                     OwnerEmail = b.OwnerEmail,
                     Condition = b.Condition,
-
+                    Reservations = b.Reservations
+                        .OrderBy(r => r.ReservedAt)
+                        .Select(r => new BookReservationDto
+                        {
+                            ReservedByUserName = r.ReservedByUserName,
+                            ReservedByUserEmail = r.ReservedByUserEmail,
+                            ReservedAt = r.ReservedAt
+                        })
+                        .ToList()
                 })
                 .ToListAsync();
 
-            return Ok(books);
+            return Ok(new BooksPageResponse
+            {
+                Items = books,
+                FilteredCount = filteredCount,
+                VisibleCount = visibleCount,
+                MinPrice = minVisiblePrice,
+                MaxPrice = maxVisiblePrice,
+                Page = page,
+                PageSize = pageSize
+            });
         }
 
         [HttpPost]
