@@ -28,9 +28,9 @@
 
 .cardImage {
     width: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background-color: #f3f4f6;
     border-radius: 1rem 1rem 0 0;
-    max-height: 480px;
 }
 
 .cardWrap {
@@ -334,13 +334,15 @@ p {
 
 .adminActionGrid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr ;
     gap: 0.5rem;
 }
+
 
 .actionButtonWrapper {
     width: 100%;
 }
+
 
 .actionButtonWrapper :global(button) {
     width: 100%;

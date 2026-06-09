@@ -111,7 +111,8 @@ const Header = () => {
   const isAdminPage = location.pathname.startsWith("/admin");
   const shouldShowHomeFirst = isCreateOfferPage || isMyOffersPage || isAdminPage;
 
-  const isAdmin = auth.isAuthenticated && auth.user?.profile?.["market.admin"] === "1"
+  const adminClaim = auth.user?.profile?.["market.admin"];
+  const isAdmin = auth.isAuthenticated && (adminClaim === "1" || adminClaim === true);
 
   const handleLocalSignOut = async () => {
     await auth.removeUser();
@@ -147,6 +148,7 @@ const Header = () => {
           >
             <SearchIcon />
           </button>
+
           {auth.isAuthenticated ? (
             <Button
               icon={<SignOutIcon />}
@@ -229,6 +231,11 @@ const Header = () => {
             </menu>
           </nav>
           <div className={styles.desktopAuth}>
+            {auth.isAuthenticated && (
+              <span className={styles.userInfo}>
+                {auth.user?.profile?.name ?? auth.user?.profile?.email}
+              </span>
+            )}
             {auth.isAuthenticated ? (
               <Button
                 icon={<SignOutIcon />}

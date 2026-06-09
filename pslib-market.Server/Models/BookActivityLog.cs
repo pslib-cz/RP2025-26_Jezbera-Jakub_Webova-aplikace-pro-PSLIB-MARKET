@@ -5,7 +5,7 @@ namespace pslib_market.Server.Models
     public class BookActivityLog
     {
         public int Id { get; set; }
-        public int BookId { get; set; } 
+        public int? BookId { get; set; } 
         public Book? Book { get; set; }
 
         public string UserId { get; set; } = string.Empty;

@@ -328,6 +328,8 @@ namespace pslib_market.Server.Controller
                 : (int)Math.Ceiling(filteredCount / (double)pageSize);
             page = Math.Min(page, totalPages);
 
+            var currentEmail = GetCurrentUserEmail();
+
             var books = await ApplyBookSort(filteredBooksQuery, sort)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -346,9 +348,14 @@ namespace pslib_market.Server.Controller
                         TextColor = t.TextColor ?? "#111827"
                     }).ToList(),
                     OwnerName = b.OwnerName,
-                    OwnerEmail = b.OwnerEmail,
+                    OwnerEmail = (isAdmin || b.OwnerEmail == currentEmail)
+                        ? b.OwnerEmail
+                        : null,
                     Condition = b.Condition,
                     Reservations = b.Reservations
+                        .Where(r => isAdmin
+                                 || b.OwnerEmail == currentEmail
+                                 || r.ReservedByUserEmail == currentEmail)
                         .OrderBy(r => r.ReservedAt)
                         .Select(r => new BookReservationDto
                         {
@@ -872,6 +879,27 @@ namespace pslib_market.Server.Controller
             return NoContent();
 
 
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound("Inzerát nebyl nalezen.");
+
+
+            AddBookActivityLog(
+                id,
+                "Delete",
+                $"Inzerát '{book.Title}' (#{id}) byl smazán administrátorem.",
+                GetCurrentUserName(),
+                GetCurrentUserEmail());
+            await _context.SaveChangesAsync();
+            _context.Books.Remove(book);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

@@ -19,6 +19,11 @@ namespace pslib_market.Server.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<BookActivityLog>()
+    .HasOne(l => l.Book)
+    .WithMany()
+    .HasForeignKey(l => l.BookId)
+    .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Tag>().HasData(
                 new Tag { Id = 1, Name = "Dějepis", BgColor = "#FB923C", TextColor = "#FFFFFF" },

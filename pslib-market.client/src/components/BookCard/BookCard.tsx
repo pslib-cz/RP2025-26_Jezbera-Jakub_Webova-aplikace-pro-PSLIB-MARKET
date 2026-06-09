@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import {
   API_BASE_URL,
   reserveBook,
-  changeBookSaleStatus,
+  changeBookSaleStatus, 
+  deleteBook,
 } from "../../services/apiService";
 import styles from "./BookCard.module.css";
 import Button from "../Button";
@@ -156,7 +157,7 @@ const BookCard: React.FC<BookCardProps> = ({
 
         <div className={styles.cardFooter}>
           <p className={styles.cardPrice}>{price},-</p>
-          {!isAdmin && (
+          { (
             <div
               className={`${styles.interestButtonWrap} ${interestState === "sending"
                   ? styles.interestButtonSending
@@ -232,22 +233,41 @@ const BookCard: React.FC<BookCardProps> = ({
                 </>
               ) : saleStatus === REJECTED_STATUS ? null : (
                 <>
-                  <div className={styles.actionButtonWrapper}>
-                    <Button
-                      text="Prodané"
-                      variant="secondary"
-                      disabled={saleStatus === SOLD_STATUS}
-                      onClick={() => handleStatusChange(SOLD_STATUS)}
-                    />
-                  </div>
-                  <div className={styles.actionButtonWrapper}>
-                    <Button
-                      text="Volné"
-                      variant="secondary"
-                      disabled={saleStatus === AVAILABLE_STATUS}
-                      onClick={() => handleStatusChange(AVAILABLE_STATUS)}
-                    />
-                  </div>
+
+                 
+                  {saleStatus !== SOLD_STATUS && (
+                    <div className={styles.actionButtonWrapper}>
+                      <Button
+                        text="Označit jako prodané "
+                        variant="secondary"
+                        onClick={() => handleStatusChange(SOLD_STATUS)}
+                      />
+                    </div>
+                  )}
+                  {saleStatus === SOLD_STATUS && (
+                    <div className={styles.actionButtonWrapper}>
+                      <Button
+                        text="Označit jako dostupné"
+                        variant="secondary"
+                        onClick={() => handleStatusChange(AVAILABLE_STATUS)}
+                      />
+                    </div>
+                  )}
+                  {isAdmin && !isOwnedByCurrentUser && (
+                    <div className={styles.actionButtonWrapper}>
+                      <Button
+                        text="Smazat inzerát"
+                        variant="secondary"
+                        onClick={async () => {
+                          if (!confirm("Opravdu nevratně smazat tento inzerát?")) return;
+                          const token = auth.user?.access_token;
+                          if (!token) return;
+                          await deleteBook(id, token);
+                          onReloadRequest?.();
+                        }}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>

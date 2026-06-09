@@ -24,10 +24,13 @@ function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/*" element={<HomePage />} />
-        <Route element={<ProtectedRoute />}>
+
+        <Route element={<ProtectedRoute requireAdmin />}>
           <Route path="/admin/schvalovani" element={<PendingApprovalsPage />} />
           <Route path="/admin/audit-log" element={<AuditLogPage />} />
           <Route path="/admin/tagy" element={<TagsAdminPage />} />
+        </Route>
+        <Route element={<ProtectedRoute />}>
           <Route path="/moje-inzeraty" element={<MyOffersPage />} />
           <Route path="/vytvorit-inzerat" element={<CreateOfferPage />} />
           <Route path="/upravit-inzerat/:id" element={<CreateOfferPage />} />

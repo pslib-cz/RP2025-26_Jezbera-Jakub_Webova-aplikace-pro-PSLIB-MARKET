@@ -31,7 +31,8 @@ const getReservationNames = (book: Book): string[] => {
     .map((reservation) => {
       const name = reservation.reservedByUserName?.trim();
       const email = reservation.reservedByUserEmail?.trim();
-      return name || email || "Neznámý uživatel";
+      if (name && email) return `${name} (${email})`;
+      return email || name || "Neznámý uživatel";
     });
 };
 
@@ -125,7 +126,7 @@ export default function MyOffersPage() {
       setFlashType("error");
       setFlashMessage(
         "Chyba při změně stavu. " +
-          (error instanceof Error ? error.message : "Zkuste to prosím znovu."),
+        (error instanceof Error ? error.message : "Zkuste to prosím znovu."),
       );
     }
   };
@@ -239,11 +240,10 @@ export default function MyOffersPage() {
 
                   {isUnapproved && (
                     <div
-                      className={`${styles.moderationNotice} ${
-                        book.saleStatus === PENDING_STATUS
+                      className={`${styles.moderationNotice} ${book.saleStatus === PENDING_STATUS
                           ? styles.moderationNoticePending
                           : styles.moderationNoticeRejected
-                      }`}
+                        }`}
                     >
                       {book.saleStatus === PENDING_STATUS
                         ? "Inzerát čeká na schválení adminem. Po schválení bude viditelný pro ostatní."
@@ -314,11 +314,10 @@ export default function MyOffersPage() {
                     <div className={styles.saleActions}>
                       <button
                         type="button"
-                        className={`${styles.saleButton} ${styles.buttonSold} ${
-                          book.saleStatus === SOLD_STATUS
+                        className={`${styles.saleButton} ${styles.buttonSold} ${book.saleStatus === SOLD_STATUS
                             ? styles.activeSaleButton
                             : ""
-                        }`}
+                          }`}
                         disabled={book.saleStatus === SOLD_STATUS}
                         onClick={() => {
                           void handleStatusChange(book.id, SOLD_STATUS);
@@ -328,11 +327,10 @@ export default function MyOffersPage() {
                       </button>
                       <button
                         type="button"
-                        className={`${styles.saleButton} ${styles.buttonAvailable} ${
-                          book.saleStatus === AVAILABLE_STATUS
+                        className={`${styles.saleButton} ${styles.buttonAvailable} ${book.saleStatus === AVAILABLE_STATUS
                             ? styles.activeSaleButton
                             : ""
-                        }`}
+                          }`}
                         disabled={book.saleStatus === AVAILABLE_STATUS}
                         onClick={() => {
                           void handleStatusChange(book.id, AVAILABLE_STATUS);

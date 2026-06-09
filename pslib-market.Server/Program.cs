@@ -63,7 +63,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:51572", "https://market.pslib.cloud")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -88,11 +88,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = authority;
-        options.Audience = "market";
+        options.Audience = "Market";
         options.MapInboundClaims = false;
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateAudience = false 
+            ValidateAudience = true,
+            ValidAudience = "Market",
         };
 
         options.Events = new JwtBearerEvents
@@ -171,12 +172,12 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("UserBasedAdCreation", httpContext =>
         RateLimitPartition.GetSlidingWindowLimiter(
-            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
                           ?? httpContext.Request.Headers.Host.ToString(),
             factory: partition => new SlidingWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
-                PermitLimit = 1, 
+                PermitLimit = 1,
                 Window = TimeSpan.FromSeconds(30),
                 SegmentsPerWindow = 3,
                 QueueLimit = 0
@@ -184,7 +185,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("UserBasedReservation", httpContext =>
         RateLimitPartition.GetSlidingWindowLimiter(
-            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
                           ?? httpContext.Request.Headers.Host.ToString(),
             factory: partition => new SlidingWindowRateLimiterOptions
             {
@@ -197,7 +198,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("UserBasedAdUpdate", httpContext =>
         RateLimitPartition.GetSlidingWindowLimiter(
-            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value 
+            partitionKey: httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
                           ?? httpContext.Request.Headers.Host.ToString(),
             factory: partition => new SlidingWindowRateLimiterOptions
             {
@@ -215,6 +216,12 @@ builder.Services.AddHostedService<ImageProcessingWorker>();
 
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                       | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 app.UseDefaultFiles();
 app.MapStaticAssets();

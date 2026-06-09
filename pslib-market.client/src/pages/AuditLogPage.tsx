@@ -107,10 +107,12 @@ const AuditLogPage = () => {
                     <td>{new Date(log.timeStamp).toLocaleString('cs-CZ')}</td>
                     <td>{log.userId || 'Neznámý uživatel'}</td>
                     <td>{log.action}</td>
-                    <td title={log.book?.title || `#${log.bookId}`}>
+                    <td title={log.book?.title || (log.bookId ? `#${log.bookId}` : "Smazaný inzerát")}>
                       {log.book?.title
                         ? `${truncateTitle(log.book.title)} (#${log.bookId})`
-                        : `#${log.bookId}`}
+                        : log.bookId
+                          ? `#${log.bookId}`
+                          : "—"}
                     </td>
                     <td>{log.details || '-'}</td>
                   </tr>

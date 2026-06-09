@@ -299,3 +299,13 @@ export const deleteTag = async (name: string, token: string): Promise<void> => {
     throw new Error(errorMessage || "Nepodařilo se smazat předmět.");
   }
 };
+
+
+export const deleteBook = async (id: number, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+    method: "DELETE",
+    headers: createAuthHeaders(token),
+    credentials: "include",
+  });
+    if (!response.ok) throw new Error("Nepodařilo se smazat inzerát.");
+};
