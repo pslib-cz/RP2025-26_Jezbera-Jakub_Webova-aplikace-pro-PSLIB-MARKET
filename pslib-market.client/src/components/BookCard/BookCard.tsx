@@ -10,6 +10,7 @@ import {
 import styles from "./BookCard.module.css";
 import Button from "../Button";
 import { getConditionClass, getConditionLabel } from "../../utils/constants";
+import type { BookReservation } from "../../types/models";
 
 type BookCardProps = {
   id: number;
@@ -24,6 +25,7 @@ type BookCardProps = {
   isOwnedByCurrentUser?: boolean;
   isAdmin?: boolean;
   onReloadRequest?: () => void;
+  reservations?: BookReservation[];
 };
 
 const AVAILABLE_STATUS = 0;
@@ -44,6 +46,7 @@ const BookCard: React.FC<BookCardProps> = ({
   isReservedByCurrentUser,
   isOwnedByCurrentUser,
   isAdmin,
+  reservations,
   onReloadRequest,
 }) => {
   const auth = useAuth();
@@ -128,7 +131,7 @@ const BookCard: React.FC<BookCardProps> = ({
           alt={title}
         />
         {isReserved && (
-          <span className={styles.reservedBadge}>Rezervováno</span>
+          <span className={styles.reservedBadge}>{isReservedByCurrentUser ? "Vaše rezervace" : "Rezervováno"}</span>
         )}
         <div className={styles.badgesOverlay}>
           {normalizedTags.map((tag) => (
@@ -272,6 +275,21 @@ const BookCard: React.FC<BookCardProps> = ({
               )}
             </div>
           </div>
+        )}
+
+        {isAdmin && reservations && reservations.length > 0 && (
+          <ol className={styles.reservationsList}>
+            {[...reservations]
+            .sort((a,b) =>
+            new Date(a.reservedAt ?? "").getTime() - new Date(b.reservedAt ?? "").getTime()
+            )
+            .map((res, index) => (
+              <li key={res.id} className={styles.reservationItem}>
+                {index + 1}. {res.reservedByUserName}
+                {res.reservedByUserEmail ? ` (${res.reservedByUserEmail})` : ""}
+                </li>
+              ))}
+          </ol>
         )}
       </div>
     </div>

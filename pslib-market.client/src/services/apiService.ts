@@ -1,4 +1,4 @@
-import type { Book, BookActivityLog, Tag } from "../types/models";
+import type { Book, BookActivityLog, ReservedBook, Tag } from "../types/models";
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const isLocalhostAbsoluteApi = /^https?:\/\/localhost:\d+(\/api)?\/?$/i.test(
@@ -117,6 +117,17 @@ export const getMyBooks = async (token: string): Promise<Book[]> => {
 
   return await response.json();
 };
+
+export const getReservedByMe = async (token: string): Promise<ReservedBook[]> => {
+  const response = await fetch(`${API_BASE_URL}/books/reserved-by-me`, {
+    headers: createAuthHeaders(token),
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error("Nepodařilo se stáhnout rezervované inzeráty z backendu.");
+  }
+  return await response.json();
+}
 
 export const changeBookSaleStatus = async (
   bookId: number,
@@ -309,3 +320,6 @@ export const deleteBook = async (id: number, token: string): Promise<void> => {
   });
     if (!response.ok) throw new Error("Nepodařilo se smazat inzerát.");
 };
+
+
+

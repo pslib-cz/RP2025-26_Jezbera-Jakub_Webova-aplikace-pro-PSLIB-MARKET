@@ -901,6 +901,44 @@ namespace pslib_market.Server.Controller
 
             return NoContent();
         }
+
+        [HttpGet("reserved-by-me")]
+        [Authorize]
+        public async Task<IActionResult> GetReservedByMe()
+        {
+            var email = GetCurrentUserEmail();
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
+            var books = await _context.Books
+                .AsNoTracking()
+                .Include(b => b.Reservations)
+                .Where(b => b.Reservations.Any(r => r.ReservedByUserEmail == email))
+                .ToListAsync();
+
+            var result = books.Select(b =>
+            {
+                var ordered = b.Reservations.OrderBy(r => r.ReservedAt).ToList();
+                var myIndex = ordered.FindIndex(r => r.ReservedByUserEmail == email);
+                return new
+                {
+                    b.Id,
+                    b.Title,
+                    b.Price,
+                    b.SaleStatus,
+                    b.OwnerEmail,
+                    b.OwnerName,
+                    QueuePosition = myIndex + 1,
+                    QueueLength = ordered.Count,
+                    ReservedAt = myIndex >= 0 ? ordered[myIndex].ReservedAt : (DateTime?)null
+                };
+            }).ToList();
+
+
+
+            return Ok(result);
+        }
     }
 }
 

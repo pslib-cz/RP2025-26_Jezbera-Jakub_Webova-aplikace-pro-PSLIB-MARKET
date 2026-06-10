@@ -12,7 +12,7 @@ import SortButtons, {
   type SortOption,
 } from "../components/SortButtons/SortButtons";
 import FilterSidebar from "../components/FilterSideBar/FilterSidebar";
-import { type SidebarFilters, createEmptyFilters } from "../utils/constants";
+import { type SidebarFilters } from "../utils/constants";
 import { mobileSortOptions } from "../utils/sortConstants";
 import Button from "../components/Button";
 
@@ -56,15 +56,22 @@ const HomePage = () => {
 
   const [books, setBooks] = useState<Book[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
-
-  const [sortOption, setSortOption] = useState<SortOption>("newest");
+ const [searchParams, setSearchParams] = useSearchParams();
+  const [sortOption, setSortOption] = useState<SortOption>(
+    () => (searchParams.get("sort") as SortOption) || "newest",
+  );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileSortOpen, setIsMobileSortOpen] = useState(false);
-  const [appliedFilters, setAppliedFilters] =
-    useState<SidebarFilters>(createEmptyFilters);
+  const [appliedFilters, setAppliedFilters] = useState<SidebarFilters>(() => ({
+    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : null,
+    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : null,
+    subjects: searchParams.getAll("subject"),
+    conditions: searchParams.getAll("condition").map(Number),
+    saleStatuses: searchParams.getAll("saleStatuses") as SidebarFilters["saleStatuses"],
+  }));
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [searchParams] = useSearchParams();
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -190,6 +197,29 @@ const HomePage = () => {
     </svg>
   );
 
+  const syncUrl = (filters: SidebarFilters, sort: SortOption) => {
+    const params = new URLSearchParams(searchParams);
+    if (sort && sort !== "newest") params.set("sort", sort);
+    else params.delete("sort");
+
+    if (filters.minPrice != null) params.set("minPrice", String(filters.minPrice));
+    else params.delete("minPrice");
+
+    if (filters.maxPrice != null) params.set("maxPrice", String(filters.maxPrice));
+    else params.delete("maxPrice");
+
+    params.delete("subject");
+    filters.subjects.forEach((subject) => params.append("subject", subject));
+
+    params.delete("condition");
+    filters.conditions.forEach((condition) => params.append("condition", String(condition)));
+
+    params.delete("saleStatuses");
+    filters.saleStatuses.forEach((status) => params.append("saleStatuses", status));
+
+    setSearchParams(params, { replace: true });
+  };
+
   const normalizedCurrentUserEmail = String(auth.user?.profile?.email ?? "")
     .trim()
     .toLowerCase();
@@ -198,11 +228,13 @@ const HomePage = () => {
   const handleApplyFilters = (filters: SidebarFilters) => {
     setCurrentPage(1);
     setAppliedFilters(filters);
+    syncUrl(filters, sortOption);
   };
 
   const handleSortChange = (nextSort: SortOption) => {
     setCurrentPage(1);
     setSortOption(nextSort);
+    syncUrl(appliedFilters, nextSort);
   };
 
   const hasNoBooksAtAll = !isLoading && !loadError && visibleCount === 0;

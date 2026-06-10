@@ -202,9 +202,9 @@ const Header = () => {
                 ) : (
                   <Link
                     className={`${styles.navLink} ${styles.navLinkSecondary}`.trim()}
-                    to="/moje-inzeraty"
+                    to="/muj-prehled"
                   >
-                    Moje inzeráty
+                    Můj přehled
                   </Link>
                 )}
               </li>
@@ -212,9 +212,9 @@ const Header = () => {
                 {isCreateOfferPage ? (
                   <Link
                     className={`${styles.navLink} ${styles.navLinkPrimary}`.trim()}
-                    to="/moje-inzeraty"
+                    to="/muj-prehled"
                   >
-                    Moje inzeráty
+                    Můj přehled
                   </Link>
                 ) : (
                   <Link

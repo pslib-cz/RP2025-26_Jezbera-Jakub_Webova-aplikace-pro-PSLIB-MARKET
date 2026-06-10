@@ -39,3 +39,16 @@ export interface BookActivityLog {
     title: string;
   };
 }
+
+export interface ReservedBook {
+  id: number;
+  title: string;
+  saleStatus: number;
+  reservedAt: string | null;
+  ownerName: string;
+  ownerEmail: string | null;
+  queuePosition: number;
+  queueLength: number;
+  price: number;
+  
+}
