@@ -5,6 +5,7 @@ import {
   getMyBooks,
   changeBookSaleStatus,
   getReservedByMe,
+  cancelReservation,
 } from "../services/apiService";
 import type { Book, ReservedBook } from "../types/models";
 import FlashMessage, {
@@ -114,7 +115,17 @@ export default function MyOffersPage() {
         ) : (
           <div className={styles.reservationsList}>
             {reservedBooks.map((reserved) => (
-              <ReservedCard key={reserved.id} reserved={reserved} />
+              <ReservedCard 
+              key={reserved.id}
+              reserved={reserved} 
+              onCancel={async (bookId) => {
+                const token = auth.user?.access_token;
+                if (!token) return;
+                if(!confirm("Opravdu chceš zrušit tuto rezervaci?")) return;
+                  await cancelReservation(bookId, token);
+                  getReservedByMe(token).then(setReservedBooks).catch(console.error);
+
+              }} />
             ))}
           </div>
         )

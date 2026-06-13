@@ -1,6 +1,7 @@
 import type { ReservedBook } from "../types/models";
 import { API_BASE_URL } from "../services/apiService";
 import styles from "../pages/MyOffersPage.module.css";
+import Button from "./Button";
 
 const statusLabels: Record<number, string> = {
   0: "Volné",
@@ -11,7 +12,7 @@ const statusLabels: Record<number, string> = {
   5: "Zamítnuto",
 };
 
-export default function ReservedCard({ reserved }: { reserved: ReservedBook }) {
+export default function ReservedCard({ reserved, onCancel }: { reserved: ReservedBook; onCancel: (id: number) => void }) {
   return (
     <div className={styles.reservedItem}>
       <div className={styles.headerRow}>
@@ -47,6 +48,7 @@ export default function ReservedCard({ reserved }: { reserved: ReservedBook }) {
           </div>
         )}
       </div>
+      <Button variant="secondary" onClick={() => onCancel(reserved.id)} text="Zrušit rezervaci" />
     </div>
   );
 }

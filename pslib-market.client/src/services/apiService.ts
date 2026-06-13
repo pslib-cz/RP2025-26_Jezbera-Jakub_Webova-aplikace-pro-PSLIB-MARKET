@@ -323,3 +323,11 @@ export const deleteBook = async (id: number, token: string): Promise<void> => {
 
 
 
+export const cancelReservation = async (id: number, token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/books/${id}/reserve`, {
+    method: "DELETE",
+    headers: createAuthHeaders(token),
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Nepodařilo se zrušit rezervaci.");
+};

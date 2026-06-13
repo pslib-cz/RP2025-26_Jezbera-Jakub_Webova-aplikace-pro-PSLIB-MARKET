@@ -107,7 +107,7 @@ const Header = () => {
   const auth = useAuth();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const isCreateOfferPage = location.pathname === "/vytvorit-inzerat";
-  const isMyOffersPage = location.pathname === "/moje-inzeraty";
+  const isMyOffersPage = location.pathname === "/muj-prehled";
   const isAdminPage = location.pathname.startsWith("/admin");
   const shouldShowHomeFirst = isCreateOfferPage || isMyOffersPage || isAdminPage;
 

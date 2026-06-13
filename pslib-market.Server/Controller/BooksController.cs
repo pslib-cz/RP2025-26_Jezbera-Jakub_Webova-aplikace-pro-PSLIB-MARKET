@@ -631,7 +631,7 @@ namespace pslib_market.Server.Controller
                 var subject = "Nová rezervace vaší knihy";
                 var body = BuildEmailBodyWithAppLink(
                     $"Dobrý den, uživatel {userName} si právě rezervoval vaši knihu '{book.Title}'. Spojte se s ním na emailu: {userEmail}.",
-                    "moje-inzeraty");
+                    "muj-prehled");
                 await _emailService.SendEmailAsync(book.OwnerEmail, subject, body);
             }
             catch (Exception ex)
@@ -938,6 +938,69 @@ namespace pslib_market.Server.Controller
 
 
             return Ok(result);
+        }
+
+        [HttpDelete("{id}/reserve")]
+        [Authorize]
+        public async Task<IActionResult> CancelReservation(int id)
+        {
+            var userId = GetCurrentUserId();
+            var userEmail = GetCurrentUserEmail();
+            var userName = GetCurrentUserName();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Neplatné uživatelské údaje.");
+            }
+
+            var book = await _context.Books
+                .Include(b => b.Reservations)
+                .FirstOrDefaultAsync(b => b.Id == id);
+            if (book == null) return NotFound("Inzerát nebyl nalezen.");
+
+            var myReservation = book.Reservations.FirstOrDefault(r => r.ReservedByUserId == userId);
+            if (myReservation == null) return NotFound("Rezervace nebyla nalezena.");
+
+            var ordered = book.Reservations.OrderBy(r => r.ReservedAt).ToList();
+            var wasFirst = ordered.First().ReservedByUserId == userId;
+
+            _context.BookReservations.Remove(myReservation);
+            book.Reservations.Remove(myReservation);
+
+            var remaining = book.Reservations.OrderBy(r => r.ReservedAt).ToList();
+            if (remaining.Count == 0 && book.SaleStatus == SaleStatus.Reserved)
+            {
+                book.SaleStatus = SaleStatus.Available;
+            }
+
+            book.LastUpdatedAt = DateTime.UtcNow;
+            AddBookActivityLog(
+                    book.Id,
+                    "CancelReservation",
+                    $"Uživatel {userName} zrušil rezervaci", userEmail, userName);
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _emailService.SendEmailAsync(book.OwnerEmail, "Zrušení rezervace",
+                BuildEmailBodyWithAppLink(
+                    $"Dobrý den, uživatel {userName} zrušil rezervaci vaší knihy '{book.Title}'.",
+                    "muj-prehled"));
+
+                if (wasFirst && remaining.Count > 0)
+                {
+                    var nextInLine = remaining.First();
+                    await _emailService.SendEmailAsync(nextInLine.ReservedByUserEmail, "Posun v rezervacích",
+                        BuildEmailBodyWithAppLink(
+                            $"Dobrý den, uživatel {userName} zrušil rezervaci knihy '{book.Title}', kterou máte také rezervovanou. Nyní jste první v pořadí pro tuto knihu.",
+                            "muj-prehled"));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Nepodařilo se odeslat email po zrušení rezervace pro inzerát {BookId}.", id);
+            }
+            return Ok("Rezervace byla úspěšně zrušena.");
+
         }
     }
 }

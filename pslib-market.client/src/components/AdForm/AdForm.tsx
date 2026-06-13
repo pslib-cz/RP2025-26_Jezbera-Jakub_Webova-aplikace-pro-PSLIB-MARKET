@@ -244,7 +244,7 @@ const AdForm = ({ initialData }: AdFormProps) => {
         localStorage.setItem(RATE_LIMIT_KEY, getCurrentTimestampString());
       }
 
-      navigate(isEditMode ? "/moje-inzeraty" : "/", {
+      navigate(isEditMode ? "/muj-prehled" : "/", {
         state: {
           flashType: "success",
           flashMessage: isEditMode
